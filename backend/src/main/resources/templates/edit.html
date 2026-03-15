@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Edit ' + ${content.slug} + ' - Easy Host'">Edit - Easy Host</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #1a1a1a; }
+        .navbar { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { font-size: 1.2rem; }
+        .container { max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
+        .card { background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); padding: 2rem; }
+        .card h2 { margin-bottom: 0.5rem; font-size: 1.25rem; }
+        .card .meta { color: #666; font-size: 0.85rem; margin-bottom: 1.5rem; }
+        .form-group { margin-bottom: 1.25rem; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; color: #333; margin-bottom: 0.3rem; }
+        .hint { font-size: 0.8rem; color: #888; margin-top: 0.2rem; }
+        input[type="file"] { font-size: 0.9rem; }
+        .btn { padding: 0.55rem 1.2rem; border: none; border-radius: 4px; font-size: 0.9rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-primary { background: #4a90d9; color: #fff; }
+        .btn-primary:hover { background: #357abd; }
+        .btn-outline { background: transparent; border: 1px solid #d0d0d0; color: #333; }
+        .btn-outline:hover { background: #f5f5f5; }
+        .form-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+        .alert { padding: 0.6rem 0.75rem; border-radius: 4px; margin-bottom: 1rem; font-size: 0.85rem; }
+        .alert-error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        .file-list { list-style: none; margin-top: 0.5rem; }
+        .file-list li { font-size: 0.85rem; color: #555; padding: 0.2rem 0; }
+        .file-list li::before { content: "- "; color: #999; }
+        a { color: #4a90d9; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1><a th:href="@{/dashboard}" style="color:inherit">Easy Host</a></h1>
+    </nav>
+
+    <div class="container">
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+        <div class="card">
+            <h2 th:text="'Edit: ' + ${content.slug}">Edit</h2>
+            <p class="meta">
+                Created <span th:text="${#temporals.format(content.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
+                | <a th:href="@{'/s/' + ${content.slug}}" target="_blank">View live</a>
+            </p>
+
+            <div class="form-group">
+                <label>Current files</label>
+                <ul class="file-list">
+                    <li th:each="f : ${content.files}" th:text="${f}"></li>
+                </ul>
+            </div>
+
+            <form th:action="@{'/edit/' + ${content.slug}}" method="post" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="file">Replace with new file</label>
+                    <input type="file" id="file" name="file" required accept=".html,.htm,.zip">
+                    <p class="hint">This will replace all existing files. Upload a single HTML file or a ZIP archive.</p>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Update</button>
+                    <a th:href="@{/dashboard}" class="btn btn-outline">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

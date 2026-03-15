@@ -81,8 +81,8 @@ spec:
             httpGet:
               path: /actuator/health
               port: http
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 5
-            failureThreshold: 12
+            failureThreshold: 36
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

@@ -29,11 +29,11 @@ ingress:
 
 resources:
   limits:
-    cpu: 500m
-    memory: 512Mi
+    cpu: 1000m
+    memory: 1Gi
   requests:
     cpu: 250m
-    memory: 256Mi
+    memory: 512Mi
 
 securityContext:
   runAsNonRoot: true
@@ -54,4 +54,4 @@ app:
   actuator:
     username: actuator
     password: changeme
-  javaOpts: "-Xmx384m -Xms256m -XX:MaxMetaspaceSize=128m -XX:+UseG1GC"
+  javaOpts: "-Xmx512m -Xms256m -XX:MaxMetaspaceSize=192m -XX:+UseG1GC"

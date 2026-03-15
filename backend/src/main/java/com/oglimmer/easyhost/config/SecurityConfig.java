@@ -3,6 +3,7 @@ package com.oglimmer.easyhost.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -32,15 +33,17 @@ public class SecurityConfig {
     private String appPassword;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    @Order(1)
+    public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
         http
+            .securityMatcher("/api/**", "/actuator/**")
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/actuator/**").hasRole("ACTUATOR")
                 .requestMatchers("/api/**").hasRole("USER")
-                .requestMatchers("/s/**").permitAll()
-                .anyRequest().permitAll()
             )
             .httpBasic(Customizer.withDefaults())
+            .csrf(csrf -> csrf.disable())
             .headers(headers -> headers
                 .contentTypeOptions(Customizer.withDefaults())
                 .frameOptions(fo -> fo.deny())
@@ -48,8 +51,35 @@ public class SecurityConfig {
                     .includeSubDomains(true)
                     .maxAgeInSeconds(31536000)
                 )
+            );
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
+    public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/s/**").permitAll()
+                .requestMatchers("/login").permitAll()
+                .requestMatchers("/dashboard/**", "/upload", "/edit/**", "/delete/**").hasRole("USER")
+                .anyRequest().permitAll()
             )
-            .csrf(csrf -> csrf.disable());
+            .formLogin(form -> form
+                .loginPage("/login")
+                .defaultSuccessUrl("/dashboard", true)
+            )
+            .logout(logout -> logout
+                .logoutSuccessUrl("/login?logout")
+            )
+            .headers(headers -> headers
+                .contentTypeOptions(Customizer.withDefaults())
+                .frameOptions(fo -> fo.deny())
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .includeSubDomains(true)
+                    .maxAgeInSeconds(31536000)
+                )
+            );
         return http.build();
     }
 
