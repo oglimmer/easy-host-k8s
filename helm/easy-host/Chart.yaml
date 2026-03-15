@@ -1,0 +1,6 @@
+apiVersion: v2
+name: easy-host
+description: Simple web content hosting service
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

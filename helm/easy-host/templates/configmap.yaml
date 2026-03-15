@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "easy-host.fullname" . }}-database
+  labels:
+    {{- include "easy-host.labels" . | nindent 4 }}
+data:
+  host: {{ .Values.database.host | quote }}
+  port: {{ .Values.database.port | quote }}
+  database: {{ .Values.database.name | quote }}

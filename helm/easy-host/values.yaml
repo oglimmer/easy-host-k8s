@@ -1,0 +1,57 @@
+replicaCount: 1
+
+image:
+  registry: registry.oglimmer.com
+  repository: easy-host
+  tag: latest
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: oglimmerregistrykey
+
+serviceAccount:
+  create: true
+  name: ""
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: true
+  host: content.oglimmer.com
+  tls:
+    enabled: true
+    secretName: tls-easy-host-ingress-dns
+  certManager:
+    enabled: true
+    clusterIssuer: oglimmer-com-dns
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  fsGroup: 10001
+
+database:
+  host: mariadb
+  port: 3306
+  name: easyhost
+  username: easyhost
+  password: easyhost
+
+app:
+  user:
+    username: admin
+    password: changeme
+  actuator:
+    username: actuator
+    password: changeme
+  javaOpts: "-Xmx384m -Xms256m -XX:MaxMetaspaceSize=128m -XX:+UseG1GC"

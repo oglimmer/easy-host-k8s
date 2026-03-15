@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "easy-host.fullname" . }}
+  labels:
+    {{- include "easy-host.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "easy-host.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "easy-host.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "easy-host.serviceAccountName" . }}
+      securityContext:
+        runAsNonRoot: {{ .Values.securityContext.runAsNonRoot }}
+        fsGroup: {{ .Values.securityContext.fsGroup }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            runAsUser: {{ .Values.securityContext.runAsUser }}
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: JAVA_OPTS
+              value: {{ .Values.app.javaOpts | quote }}
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mariadb://{{ .Values.database.host }}:{{ .Values.database.port }}/{{ .Values.database.name }}"
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "easy-host.fullname" . }}-database-secret
+                  key: username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "easy-host.fullname" . }}-database-secret
+                  key: password
+            - name: ACTUATOR_USERNAME
+              value: {{ .Values.app.actuator.username | quote }}
+            - name: ACTUATOR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "easy-host.fullname" . }}-app-secret
+                  key: actuator-password
+            - name: APP_USER_USERNAME
+              value: {{ .Values.app.user.username | quote }}
+            - name: APP_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "easy-host.fullname" . }}-app-secret
+                  key: app-user-password
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 12
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

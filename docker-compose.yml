@@ -1,0 +1,31 @@
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: easyhost
+      MARIADB_USER: easyhost
+      MARIADB_PASSWORD: easyhost
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/easyhost
+      SPRING_DATASOURCE_USERNAME: easyhost
+      SPRING_DATASOURCE_PASSWORD: easyhost
+      ACTUATOR_USERNAME: actuator
+      ACTUATOR_PASSWORD: changeme
+      APP_USER_USERNAME: admin
+      APP_USER_PASSWORD: changeme
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+volumes:
+  db-data:
