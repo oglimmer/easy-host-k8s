@@ -4,41 +4,314 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Easy Host</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #1a1a1a; }
-        .navbar { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
-        .navbar h1 { font-size: 1.2rem; }
+
+        :root {
+            --bg: #08080d;
+            --surface: #111119;
+            --surface-raised: #181824;
+            --border: #2a2a3a;
+            --border-subtle: #1e1e2e;
+            --text: #e0ddd8;
+            --text-muted: #7a7a8e;
+            --accent: #b8ff57;
+            --accent-dim: rgba(184, 255, 87, 0.15);
+            --accent-glow: rgba(184, 255, 87, 0.3);
+            --danger: #ff5757;
+            --danger-dim: rgba(255, 87, 87, 0.12);
+            --success: #57ffb8;
+            --success-dim: rgba(87, 255, 184, 0.08);
+            --font-body: 'Outfit', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Noise texture */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .navbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 56px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .brand {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .brand span { color: var(--text-muted); font-weight: 400; }
+
         .navbar-actions { display: flex; gap: 0.75rem; align-items: center; }
-        .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
-        .alert { padding: 0.6rem 0.75rem; border-radius: 4px; margin-bottom: 1rem; font-size: 0.85rem; }
-        .alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-        .alert-error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-        .btn { padding: 0.45rem 0.9rem; border: none; border-radius: 4px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
-        .btn-primary { background: #4a90d9; color: #fff; }
-        .btn-primary:hover { background: #357abd; }
-        .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
-        .btn-danger { background: #dc2626; color: #fff; }
-        .btn-danger:hover { background: #b91c1c; }
-        .btn-outline { background: transparent; border: 1px solid #d0d0d0; color: #333; }
-        .btn-outline:hover { background: #f5f5f5; }
-        .btn-logout { background: transparent; border: 1px solid #d0d0d0; color: #333; padding: 0.35rem 0.7rem; font-size: 0.8rem; border-radius: 4px; cursor: pointer; }
-        .btn-logout:hover { background: #f5f5f5; }
-        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #fafafa; font-size: 0.8rem; text-transform: uppercase; color: #666; font-weight: 600; }
-        td { font-size: 0.9rem; }
-        .actions { display: flex; gap: 0.4rem; align-items: center; }
-        .empty { text-align: center; padding: 3rem; color: #999; background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-        a { color: #4a90d9; text-decoration: none; }
-        a:hover { text-decoration: underline; }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 16px var(--accent-glow);
+        }
+
+        .btn-sm {
+            padding: 0.35rem 0.7rem;
+            font-size: 0.7rem;
+        }
+
+        .btn-danger {
+            background: transparent;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-dim);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.4rem 0.8rem;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            border-color: var(--text-muted);
+            color: var(--text);
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            font-family: var(--font-mono);
+            border-left: 3px solid;
+            animation: alertIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes alertIn {
+            from { opacity: 0; transform: translateX(-8px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .alert-success {
+            background: var(--success-dim);
+            color: var(--success);
+            border-color: var(--success);
+        }
+
+        .alert-error {
+            background: var(--danger-dim);
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        /* Section header */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .section-title {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+        }
+
+        .count-badge {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--accent);
+            background: var(--accent-dim);
+            padding: 0.2rem 0.5rem;
+        }
+
+        /* Table */
+        .table-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        th {
+            padding: 0.75rem 1.25rem;
+            text-align: left;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            background: var(--surface-raised);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 0.85rem 1.25rem;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border-subtle);
+            transition: background 0.15s;
+        }
+
+        tr:hover td { background: var(--surface-raised); }
+
+        tr:last-child td { border-bottom: none; }
+
+        .slug-link {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent);
+            text-decoration: none;
+            transition: text-shadow 0.2s;
+        }
+
+        .slug-link:hover {
+            text-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .file-count {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .timestamp {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .actions { display: flex; gap: 0.5rem; align-items: center; }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 5rem 2rem;
+            background: var(--surface);
+            border: 1px dashed var(--border);
+        }
+
+        .empty-icon {
+            font-family: var(--font-mono);
+            font-size: 2rem;
+            color: var(--text-muted);
+            opacity: 0.4;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state a {
+            color: var(--accent);
+            text-decoration: none;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        .empty-state a:hover {
+            text-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        /* Stagger animation for rows */
+        tbody tr {
+            animation: rowIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes rowIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Delete confirm dialog */
+        .delete-form { display: inline; }
     </style>
 </head>
 <body>
     <nav class="navbar">
-        <h1>Easy Host</h1>
+        <a href="/dashboard" class="brand">easy<span>host</span></a>
         <div class="navbar-actions">
-            <a th:href="@{/upload}" class="btn btn-primary">Upload new</a>
+            <a th:href="@{/upload}" class="btn btn-primary">+ Deploy</a>
             <form th:action="@{/logout}" method="post" style="display:inline">
                 <button type="submit" class="btn-logout">Logout</button>
             </form>
@@ -49,39 +322,52 @@
         <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
         <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
 
-        <div th:if="${#lists.isEmpty(contents)}" class="empty">
-            <p>No content yet.</p>
-            <p style="margin-top: 0.5rem"><a th:href="@{/upload}">Upload your first site</a></p>
+        <div th:if="${#lists.isEmpty(contents)}" class="empty-state">
+            <div class="empty-icon">&gt;_</div>
+            <p>No deployments yet.</p>
+            <p><a th:href="@{/upload}">Deploy your first site &rarr;</a></p>
         </div>
 
-        <table th:unless="${#lists.isEmpty(contents)}">
-            <thead>
-                <tr>
-                    <th>Slug</th>
-                    <th>Files</th>
-                    <th>Updated</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="c : ${contents}">
-                    <td>
-                        <a th:href="@{'/s/' + ${c.slug}}" th:text="${c.slug}" target="_blank"></a>
-                    </td>
-                    <td th:text="${#lists.size(c.files)}"></td>
-                    <td th:text="${#temporals.format(c.updatedAt, 'yyyy-MM-dd HH:mm')}"></td>
-                    <td>
-                        <div class="actions">
-                            <a th:href="@{'/edit/' + ${c.slug}}" class="btn btn-sm btn-outline">Edit</a>
-                            <form th:action="@{'/delete/' + ${c.slug}}" method="post" style="display:inline"
-                                  onsubmit="return confirm('Delete this content?')">
-                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <div th:unless="${#lists.isEmpty(contents)}">
+            <div class="section-header">
+                <span class="section-title">Your deployments</span>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Slug</th>
+                            <th>Files</th>
+                            <th>Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="c, iter : ${contents}" th:styleappend="'animation-delay:' + ${iter.index * 60} + 'ms'">
+                            <td>
+                                <a th:href="@{'/s/' + ${c.slug}}" th:text="${c.slug}" target="_blank" class="slug-link"></a>
+                            </td>
+                            <td>
+                                <span class="file-count" th:text="${#lists.size(c.files)}"></span>
+                            </td>
+                            <td>
+                                <span class="timestamp" th:text="${#temporals.format(c.updatedAt, 'yyyy-MM-dd HH:mm')}"></span>
+                            </td>
+                            <td>
+                                <div class="actions">
+                                    <a th:href="@{'/edit/' + ${c.slug}}" class="btn btn-sm btn-outline">Edit</a>
+                                    <form th:action="@{'/delete/' + ${c.slug}}" method="post" class="delete-form"
+                                          onsubmit="return confirm('Delete this deployment?')">
+                                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </body>
 </html>
