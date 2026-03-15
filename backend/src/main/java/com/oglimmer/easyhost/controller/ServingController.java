@@ -25,15 +25,20 @@ public class ServingController {
     @GetMapping("/{slug}/{*filePath}")
     public ResponseEntity<byte[]> serveFile(@PathVariable String slug,
                                             @PathVariable String filePath) {
-        ContentFile file = contentService.getFile(slug, filePath);
-        if (file == null) {
-            return ResponseEntity.notFound().build();
+        if (filePath.startsWith("/")) {
+            filePath = filePath.substring(1);
+        }
+        if (filePath.contains("..")) {
+            return ResponseEntity.badRequest().build();
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.CONTENT_TYPE, file.getContentType());
-        headers.set(HttpHeaders.CACHE_CONTROL, "public, max-age=3600");
-
-        return new ResponseEntity<>(file.getFileData(), headers, HttpStatus.OK);
+        return contentService.getFile(slug, filePath)
+                .map(file -> {
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.set(HttpHeaders.CONTENT_TYPE, file.getContentType());
+                    headers.set(HttpHeaders.CACHE_CONTROL, "public, max-age=3600");
+                    return new ResponseEntity<>(file.getFileData(), headers, HttpStatus.OK);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

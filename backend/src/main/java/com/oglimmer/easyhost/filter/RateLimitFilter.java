@@ -19,9 +19,11 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 @Slf4j
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "rate-limit.enabled", matchIfMissing = true)
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private final LoadingCache<String, RateLimiter> limiters = CacheBuilder.newBuilder()
+        .maximumSize(10_000)
         .expireAfterAccess(1, TimeUnit.HOURS)
         .build(CacheLoader.from(key -> RateLimiter.create(10.0)));
 
@@ -29,7 +31,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String ip = request.getRemoteAddr();
+        String ip = resolveClientIp(request);
         try {
             RateLimiter limiter = limiters.get(ip);
             if (!limiter.tryAcquire()) {
@@ -41,5 +43,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
             log.error("Rate limiter error", e);
         }
         filterChain.doFilter(request, response);
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        String xff = request.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) {
+            return xff.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }

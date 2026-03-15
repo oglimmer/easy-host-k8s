@@ -20,6 +20,7 @@
     <properties>
         <java.version>21</java.version>
         <maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss'Z'</maven.build.timestamp.format>
+        <testcontainers.version>1.21.0</testcontainers.version>
     </properties>
 
     <dependencies>
@@ -84,6 +85,11 @@
         </dependency>
 
         <!-- Test -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

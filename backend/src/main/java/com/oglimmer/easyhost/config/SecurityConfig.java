@@ -57,10 +57,25 @@ public class SecurityConfig {
 
     @Bean
     @Order(2)
+    public SecurityFilterChain servingFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/s/**")
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+            .headers(headers -> headers
+                .contentSecurityPolicy(csp -> csp
+                    .policyDirectives("default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; frame-ancestors 'none'")
+                )
+                .contentTypeOptions(Customizer.withDefaults())
+                .frameOptions(fo -> fo.deny())
+            );
+        return http.build();
+    }
+
+    @Bean
+    @Order(3)
     public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/s/**").permitAll()
                 .requestMatchers("/login").permitAll()
                 .requestMatchers("/dashboard/**", "/upload", "/edit/**", "/delete/**").hasRole("USER")
                 .anyRequest().permitAll()

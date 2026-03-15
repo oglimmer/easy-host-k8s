@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -88,9 +89,8 @@ public class ContentService {
     }
 
     @Transactional(readOnly = true)
-    public ContentFile getFile(String slug, String filePath) {
-        return contentFileRepository.findByContentSlugAndFilePath(slug, filePath)
-                .orElse(null);
+    public Optional<ContentFile> getFile(String slug, String filePath) {
+        return contentFileRepository.findByContentSlugAndFilePath(slug, filePath);
     }
 
     private void addFiles(Content content, MultipartFile file) throws IOException {
@@ -115,7 +115,7 @@ public class ContentService {
                 if (entry.isDirectory()) {
                     continue;
                 }
-                String name = entry.getName();
+                String name = normalizeFilePath(entry.getName());
                 // Skip hidden files and __MACOSX
                 if (name.startsWith(".") || name.startsWith("__MACOSX")) {
                     continue;
@@ -132,6 +132,15 @@ public class ContentService {
                 content.getFiles().add(contentFile);
             }
         }
+    }
+
+    String normalizeFilePath(String path) {
+        // Reject absolute paths and path traversal sequences (Zip Slip prevention)
+        String normalized = java.nio.file.Path.of(path).normalize().toString();
+        if (normalized.startsWith("..") || normalized.startsWith("/") || normalized.startsWith("\\")) {
+            throw new InvalidFilePathException(path);
+        }
+        return normalized;
     }
 
     private String guessContentType(String filename) {
@@ -185,6 +194,12 @@ public class ContentService {
     public static class InvalidSlugException extends RuntimeException {
         public InvalidSlugException(String slug) {
             super("Invalid slug: " + slug + ". Must contain only lowercase letters, numbers, and hyphens.");
+        }
+    }
+
+    public static class InvalidFilePathException extends RuntimeException {
+        public InvalidFilePathException(String path) {
+            super("Invalid file path in archive: " + path);
         }
     }
 }
