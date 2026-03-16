@@ -22,6 +22,15 @@ import java.util.concurrent.TimeUnit;
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "rate-limit.enabled", matchIfMissing = true)
 public class RateLimitFilter extends OncePerRequestFilter {
 
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.equals("/") || path.startsWith("/login") || path.startsWith("/dashboard")
+                || path.startsWith("/upload") || path.startsWith("/edit")
+                || path.startsWith("/delete") || path.startsWith("/logout")
+                || path.startsWith("/actuator");
+    }
+
     private final LoadingCache<String, RateLimiter> limiters = CacheBuilder.newBuilder()
         .maximumSize(10_000)
         .expireAfterAccess(1, TimeUnit.HOURS)
