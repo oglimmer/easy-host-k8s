@@ -20,8 +20,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: easyhost
       ACTUATOR_USERNAME: actuator
       ACTUATOR_PASSWORD: changeme
-      APP_USER_USERNAME: admin
-      APP_USER_PASSWORD: changeme
+      APP_ADMIN_USERNAME: admin
+      APP_ADMIN_PASSWORD: changeme
     ports:
       - "8080:8080"
     depends_on:

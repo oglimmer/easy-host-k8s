@@ -3,6 +3,8 @@ package com.oglimmer.easyhost.controller;
 import com.oglimmer.easyhost.service.ContentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -18,9 +20,11 @@ import java.security.Principal;
 public class WebController {
 
     private final ContentService contentService;
+    private final ObjectProvider<ClientRegistrationRepository> clientRegProvider;
 
     @GetMapping("/login")
-    public String login() {
+    public String login(Model model) {
+        model.addAttribute("oidcEnabled", clientRegProvider.getIfAvailable() != null);
         return "login";
     }
 

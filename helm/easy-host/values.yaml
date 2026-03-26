@@ -48,9 +48,7 @@ database:
   password: easyhost
 
 app:
-  auth:
-    mode: oidc  # "password" or "oidc"
-  user:
+  admin:
     username: admin
     password: changeme
   actuator:

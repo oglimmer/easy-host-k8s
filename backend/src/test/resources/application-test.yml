@@ -10,9 +10,5 @@ spring:
   flyway:
     enabled: false
 
-app:
-  auth:
-    mode: password
-
 rate-limit:
   enabled: false

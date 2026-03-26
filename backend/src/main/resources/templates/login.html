@@ -23,6 +23,13 @@
                 You have been signed out.
             </div>
 
+            <div th:if="${oidcEnabled}" class="animate-in animate-in--d1">
+                <a th:href="@{/oauth2/authorization/keycloak}" class="btn btn--primary" style="width:100%;justify-content:center;text-decoration:none;display:flex">
+                    Sign in with SSO
+                </a>
+                <div style="text-align:center;margin:1.5rem 0 1rem;opacity:0.5;font-size:0.85rem">or sign in as admin</div>
+            </div>
+
             <form class="login-form" th:action="@{/login}" method="post">
                 <div class="form-group animate-in animate-in--d1">
                     <label class="form-label" for="username">Username</label>
