@@ -3,8 +3,6 @@ package com.oglimmer.easyhost.controller;
 import com.oglimmer.easyhost.service.ContentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
+import java.security.Principal;
 
 @Controller
 @RequiredArgsConstructor
@@ -26,11 +25,11 @@ public class WebController {
     }
 
     @GetMapping({"/", "/dashboard"})
-    public String dashboard(@AuthenticationPrincipal UserDetails user, Model model) {
-        if (user == null) {
-            return "redirect:/login";
+    public String dashboard(Principal principal, Model model) {
+        if (principal == null) {
+            return "redirect:/dashboard";
         }
-        model.addAttribute("contents", contentService.listByOwner(user.getUsername()));
+        model.addAttribute("contents", contentService.listByOwner(principal.getName()));
         return "dashboard";
     }
 
@@ -42,10 +41,10 @@ public class WebController {
     @PostMapping("/upload")
     public String upload(@RequestParam String slug,
                          @RequestParam MultipartFile file,
-                         @AuthenticationPrincipal UserDetails user,
+                         Principal principal,
                          RedirectAttributes redirectAttributes) {
         try {
-            contentService.create(slug, file, user.getUsername());
+            contentService.create(slug, file, principal.getName());
             redirectAttributes.addFlashAttribute("success", "Content '" + slug + "' created successfully.");
         } catch (ContentService.SlugAlreadyExistsException e) {
             redirectAttributes.addFlashAttribute("error", "Slug '" + slug + "' already exists.");
@@ -63,11 +62,11 @@ public class WebController {
 
     @GetMapping("/edit/{slug}")
     public String editForm(@PathVariable String slug,
-                           @AuthenticationPrincipal UserDetails user,
+                           Principal principal,
                            Model model,
                            RedirectAttributes redirectAttributes) {
         try {
-            model.addAttribute("content", contentService.getBySlug(slug, user.getUsername()));
+            model.addAttribute("content", contentService.getBySlug(slug, principal.getName()));
             return "edit";
         } catch (ContentService.ContentNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", "Content not found.");
@@ -78,10 +77,10 @@ public class WebController {
     @PostMapping("/edit/{slug}")
     public String edit(@PathVariable String slug,
                        @RequestParam MultipartFile file,
-                       @AuthenticationPrincipal UserDetails user,
+                       Principal principal,
                        RedirectAttributes redirectAttributes) {
         try {
-            contentService.update(slug, file, user.getUsername());
+            contentService.update(slug, file, principal.getName());
             redirectAttributes.addFlashAttribute("success", "Content '" + slug + "' updated successfully.");
         } catch (ContentService.ContentNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", "Content not found.");
@@ -95,10 +94,10 @@ public class WebController {
 
     @PostMapping("/delete/{slug}")
     public String delete(@PathVariable String slug,
-                         @AuthenticationPrincipal UserDetails user,
+                         Principal principal,
                          RedirectAttributes redirectAttributes) {
         try {
-            contentService.delete(slug, user.getUsername());
+            contentService.delete(slug, principal.getName());
             redirectAttributes.addFlashAttribute("success", "Content '" + slug + "' deleted.");
         } catch (ContentService.ContentNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", "Content not found.");

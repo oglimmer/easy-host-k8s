@@ -65,6 +65,24 @@ spec:
                 secretKeyRef:
                   name: {{ include "easy-host.fullname" . }}-app-secret
                   key: app-user-password
+            - name: AUTH_MODE
+              value: {{ .Values.app.auth.mode | quote }}
+            {{- if eq .Values.app.auth.mode "oidc" }}
+            - name: OIDC_ISSUER_URL
+              value: {{ .Values.app.oidc.issuerUrl | quote }}
+            - name: OIDC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.oidc.secretName }}
+                  key: client-id
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.oidc.secretName }}
+                  key: client-secret
+            - name: OIDC_ALLOWED_USERS
+              value: {{ .Values.app.oidc.allowedUsers | quote }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /actuator/health

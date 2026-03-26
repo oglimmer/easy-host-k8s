@@ -48,10 +48,17 @@ database:
   password: easyhost
 
 app:
+  auth:
+    mode: oidc  # "password" or "oidc"
   user:
     username: admin
     password: changeme
   actuator:
     username: actuator
     password: changeme
+  oidc:
+    # Secret name containing keys: client-id, client-secret
+    secretName: easy-host-oidc-secret
+    issuerUrl: "https://id.oglimmer.de/realms/oglimmer"
+    allowedUsers: "oglimmer@gmail.com"
   javaOpts: "-Xmx256m -Xms128m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -XX:MaxRAM=400m"

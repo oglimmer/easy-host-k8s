@@ -1,6 +1,7 @@
 package com.oglimmer.easyhost.config;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -73,7 +74,8 @@ public class SecurityConfig {
 
     @Bean
     @Order(3)
-    public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
+    @ConditionalOnProperty(name = "app.auth.mode", havingValue = "password", matchIfMissing = true)
+    public SecurityFilterChain passwordWebFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login").permitAll()

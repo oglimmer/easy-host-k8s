@@ -33,9 +33,16 @@ actuator:
   password: ${ACTUATOR_PASSWORD:changeme}
 
 app:
+  auth:
+    mode: ${AUTH_MODE:password}
   user:
     username: ${APP_USER_USERNAME:admin}
     password: ${APP_USER_PASSWORD:changeme}
+  oidc:
+    issuer-url: ${OIDC_ISSUER_URL:}
+    client-id: ${OIDC_CLIENT_ID:}
+    client-secret: ${OIDC_CLIENT_SECRET:}
+    allowed-users: ${OIDC_ALLOWED_USERS:}
 
 info:
   app:
