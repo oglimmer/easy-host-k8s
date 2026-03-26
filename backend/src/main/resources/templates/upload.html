@@ -47,7 +47,12 @@
                         <div class="slug-preview">
                             <span>/s/</span><span class="slug-preview__value" id="slugPreview">your-slug</span>
                         </div>
-                        <p class="form-hint">Lowercase letters, numbers, and hyphens. Min 2 characters.</p>
+                        <p class="form-hint" id="slugHint">Lowercase letters, numbers, and hyphens. Min 2 characters.</p>
+                        <p class="form-hint" id="slugError" style="display:none;color:var(--accent)">
+                            Invalid slug.
+                            <a href="#" id="slugFixLink" style="color:var(--accent);text-decoration:underline;cursor:pointer"
+                               onclick="fixSlug(); return false;">Fix it</a>
+                        </p>
                     </div>
 
                     <div class="form-group">
@@ -74,8 +79,48 @@
 
     <script th:src="@{/js/themes.js}"></script>
     <script>
+        var slugPattern = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/;
+
+        function toValidSlug(value) {
+            var s = value.toLowerCase().trim();
+            s = s.replace(/[^a-z0-9-]/g, '-');   // replace invalid chars with hyphens
+            s = s.replace(/-{2,}/g, '-');          // collapse multiple hyphens
+            s = s.replace(/^-+|-+$/g, '');         // strip leading/trailing hyphens
+            return s;
+        }
+
+        function validateSlug(value) {
+            var errorEl = document.getElementById('slugError');
+            var hintEl = document.getElementById('slugHint');
+            if (!value || slugPattern.test(value)) {
+                errorEl.style.display = 'none';
+                hintEl.style.display = '';
+            } else {
+                var suggestion = toValidSlug(value);
+                if (suggestion.length >= 2 && slugPattern.test(suggestion)) {
+                    document.getElementById('slugFixLink').textContent = 'Fix it \u2192 ' + suggestion;
+                    errorEl.style.display = '';
+                } else {
+                    document.getElementById('slugFixLink').textContent = 'Fix it';
+                    errorEl.style.display = '';
+                }
+                hintEl.style.display = 'none';
+            }
+        }
+
+        function fixSlug() {
+            var input = document.getElementById('slug');
+            var fixed = toValidSlug(input.value);
+            if (fixed.length >= 2) {
+                input.value = fixed;
+                updatePreview(fixed);
+                validateSlug(fixed);
+            }
+        }
+
         function updatePreview(value) {
             document.getElementById('slugPreview').textContent = value || 'your-slug';
+            validateSlug(value);
         }
 
         function showFileName(input) {

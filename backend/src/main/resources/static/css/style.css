@@ -1525,7 +1525,14 @@ body {
     font-family: var(--font-mono);
     font-size: 0.8125rem;
     color: var(--text-tertiary);
-    overflow-x: auto;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.slug-preview > span:first-child {
+    flex-shrink: 0;
 }
 
 .slug-preview__value { color: var(--accent); }
