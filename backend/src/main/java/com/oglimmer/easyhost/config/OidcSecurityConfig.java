@@ -25,6 +25,7 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
@@ -106,10 +107,20 @@ public class OidcSecurityConfig {
                 throw new OAuth2AuthenticationException("User not allowed: " + email);
             }
 
+            OidcIdToken idToken = oidcUser.getIdToken();
+            String issuer = idToken.getIssuer().toString();
+            String subject = idToken.getSubject();
+            String principalName = issuer + "|" + subject;
+
             Set<GrantedAuthority> authorities = new HashSet<>(oidcUser.getAuthorities());
             authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
 
-            return new DefaultOidcUser(authorities, oidcUser.getIdToken(), oidcUser.getUserInfo(), "email");
+            return new DefaultOidcUser(authorities, idToken, oidcUser.getUserInfo()) {
+                @Override
+                public String getName() {
+                    return principalName;
+                }
+            };
         };
     }
 
