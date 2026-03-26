@@ -25,7 +25,9 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import lombok.extern.slf4j.Slf4j;
 
 @Configuration
@@ -61,7 +63,7 @@ public class OidcSecurityConfig {
 
     @Bean
     @Order(3)
-    public SecurityFilterChain oidcWebFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain oidcWebFilterChain(HttpSecurity http, ClientRegistrationRepository clientRegistrationRepository) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/dashboard/**", "/upload", "/edit/**", "/delete/**").hasRole("USER")
@@ -72,7 +74,7 @@ public class OidcSecurityConfig {
                 .defaultSuccessUrl("/dashboard", true)
             )
             .logout(logout -> logout
-                .logoutSuccessUrl("/")
+                .logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository))
             )
             .headers(headers -> headers
                 .contentTypeOptions(Customizer.withDefaults())
@@ -83,6 +85,13 @@ public class OidcSecurityConfig {
                 )
             );
         return http.build();
+    }
+
+    private LogoutSuccessHandler oidcLogoutSuccessHandler(ClientRegistrationRepository clientRegistrationRepository) {
+        OidcClientInitiatedLogoutSuccessHandler handler =
+                new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
+        handler.setPostLogoutRedirectUri("{baseUrl}/");
+        return handler;
     }
 
     private OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService() {
