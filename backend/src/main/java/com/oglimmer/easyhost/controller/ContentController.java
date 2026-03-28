@@ -37,16 +37,20 @@ public class ContentController {
     @PostMapping
     public ResponseEntity<ContentResponse> create(@RequestParam String slug,
                                                   @RequestParam MultipartFile file,
+                                                  @RequestParam(required = false) String title,
+                                                  @RequestParam(required = false) String sourceUrl,
                                                   @AuthenticationPrincipal UserDetails user) throws IOException {
-        ContentResponse response = contentService.create(slug, file, user.getUsername());
+        ContentResponse response = contentService.create(slug, file, user.getUsername(), title, sourceUrl);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/{slug}")
     public ContentResponse update(@PathVariable String slug,
-                                  @RequestParam MultipartFile file,
+                                  @RequestParam(required = false) MultipartFile file,
+                                  @RequestParam(required = false) String title,
+                                  @RequestParam(required = false) String sourceUrl,
                                   @AuthenticationPrincipal UserDetails user) throws IOException {
-        return contentService.update(slug, file, user.getUsername());
+        return contentService.update(slug, file, user.getUsername(), title, sourceUrl);
     }
 
     @DeleteMapping("/{slug}")

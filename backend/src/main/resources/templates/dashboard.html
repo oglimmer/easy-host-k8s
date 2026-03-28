@@ -40,18 +40,16 @@
 
             <div class="content-list animate-in animate-in--d1" th:if="${!#lists.isEmpty(contents)}">
                 <div class="content-list__header label">
-                    <span>Slug</span>
-                    <span>Created</span>
+                    <span>Title</span>
                     <span>Updated</span>
                     <span></span>
                 </div>
                 <div class="content-list__row" th:each="item : ${contents}">
-                    <div class="content-list__slug">
-                        <a th:href="@{/s/{slug}(slug=${item.slug})}"
-                           th:text="${item.slug}" target="_blank"></a>
+                    <div class="content-list__title">
+                        <span th:text="${item.title}"></span>
+                        <a th:if="${item.sourceUrl}" th:href="${item.sourceUrl}"
+                           target="_blank" class="btn btn--ghost btn--sm" style="display:inline;padding:0.1rem 0.4rem;font-size:0.75rem">Source</a>
                     </div>
-                    <div class="content-list__meta"
-                         th:text="${#temporals.format(item.createdAt, 'dd MMM yyyy')}"></div>
                     <div class="content-list__meta"
                          th:text="${#temporals.format(item.updatedAt, 'dd MMM yyyy')}"></div>
                     <div class="content-list__actions">
@@ -60,6 +58,10 @@
                               onsubmit="return confirm('Delete this content permanently?')">
                             <button class="btn btn--danger btn--sm" type="submit">Delete</button>
                         </form>
+                    </div>
+                    <div class="content-list__slug">
+                        <a th:href="@{/s/{slug}(slug=${item.slug})}"
+                           th:text="${item.slug}" target="_blank"></a>
                     </div>
                 </div>
             </div>

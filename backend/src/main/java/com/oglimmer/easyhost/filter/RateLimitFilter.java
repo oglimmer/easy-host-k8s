@@ -28,7 +28,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return path.equals("/") || path.startsWith("/login") || path.startsWith("/dashboard")
                 || path.startsWith("/upload") || path.startsWith("/edit")
                 || path.startsWith("/delete") || path.startsWith("/logout")
-                || path.startsWith("/actuator");
+                || path.startsWith("/actuator")
+                || path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/")
+                || path.equals("/favicon.ico");
     }
 
     private final LoadingCache<String, RateLimiter> limiters = CacheBuilder.newBuilder()

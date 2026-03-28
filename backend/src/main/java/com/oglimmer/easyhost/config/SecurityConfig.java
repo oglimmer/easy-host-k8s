@@ -83,6 +83,19 @@ public class SecurityConfig {
 
     @Bean
     @Order(2)
+    public SecurityFilterChain staticResourcesFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/css/**", "/js/**", "/images/**", "/favicon.ico")
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+            .securityContext(ctx -> ctx.disable())
+            .sessionManagement(session -> session.disable())
+            .requestCache(cache -> cache.disable())
+            .headers(headers -> headers.disable());
+        return http.build();
+    }
+
+    @Bean
+    @Order(3)
     public SecurityFilterChain servingFilterChain(HttpSecurity http) throws Exception {
         http
             .securityMatcher("/s/**")
@@ -98,7 +111,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(3)
+    @Order(4)
     public SecurityFilterChain webFilterChain(HttpSecurity http,
                                               ObjectProvider<ClientRegistrationRepository> clientRegProvider) throws Exception {
         http

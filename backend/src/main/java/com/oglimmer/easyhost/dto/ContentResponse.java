@@ -11,6 +11,8 @@ import java.util.List;
 public class ContentResponse {
     private Long id;
     private String slug;
+    private String title;
+    private String sourceUrl;
     private String owner;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

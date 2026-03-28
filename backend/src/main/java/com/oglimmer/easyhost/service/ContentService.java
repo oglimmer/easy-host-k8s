@@ -45,7 +45,7 @@ public class ContentService {
     }
 
     @Transactional
-    public ContentResponse create(String slug, MultipartFile file, String owner) throws IOException {
+    public ContentResponse create(String slug, MultipartFile file, String owner, String title, String sourceUrl) throws IOException {
         if (contentRepository.existsBySlug(slug)) {
             throw new SlugAlreadyExistsException(slug);
         }
@@ -54,6 +54,8 @@ public class ContentService {
         Content content = Content.builder()
                 .slug(slug)
                 .owner(owner)
+                .title(title != null && !title.isBlank() ? title.strip() : slug)
+                .sourceUrl(sourceUrl != null && !sourceUrl.isBlank() ? sourceUrl.strip() : null)
                 .build();
         content = contentRepository.save(content);
 
@@ -63,17 +65,25 @@ public class ContentService {
     }
 
     @Transactional
-    public ContentResponse update(String slug, MultipartFile file, String owner) throws IOException {
+    public ContentResponse update(String slug, MultipartFile file, String owner, String title, String sourceUrl) throws IOException {
         Content content = contentRepository.findBySlug(slug)
                 .orElseThrow(() -> new ContentNotFoundException(slug));
         if (!content.getOwner().equals(owner)) {
             throw new ContentNotFoundException(slug);
         }
 
-        content.getFiles().clear();
-        contentRepository.flush();
+        if (title != null) {
+            content.setTitle(!title.isBlank() ? title.strip() : slug);
+        }
+        if (sourceUrl != null) {
+            content.setSourceUrl(!sourceUrl.isBlank() ? sourceUrl.strip() : null);
+        }
 
-        addFiles(content, file);
+        if (file != null && !file.isEmpty()) {
+            content.getFiles().clear();
+            contentRepository.flush();
+            addFiles(content, file);
+        }
 
         return toResponse(contentRepository.findBySlug(slug).orElseThrow());
     }
@@ -170,6 +180,8 @@ public class ContentService {
         return ContentResponse.builder()
                 .id(content.getId())
                 .slug(content.getSlug())
+                .title(content.getTitle())
+                .sourceUrl(content.getSourceUrl())
                 .owner(content.getOwner())
                 .createdAt(content.getCreatedAt())
                 .updatedAt(content.getUpdatedAt())

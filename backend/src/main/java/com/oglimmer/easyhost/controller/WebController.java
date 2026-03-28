@@ -45,10 +45,12 @@ public class WebController {
     @PostMapping("/upload")
     public String upload(@RequestParam String slug,
                          @RequestParam MultipartFile file,
+                         @RequestParam(required = false) String title,
+                         @RequestParam(required = false) String sourceUrl,
                          Principal principal,
                          RedirectAttributes redirectAttributes) {
         try {
-            contentService.create(slug, file, principal.getName());
+            contentService.create(slug, file, principal.getName(), title, sourceUrl);
             redirectAttributes.addFlashAttribute("success", "Content '" + slug + "' created successfully.");
         } catch (ContentService.SlugAlreadyExistsException e) {
             redirectAttributes.addFlashAttribute("error", "Slug '" + slug + "' already exists.");
@@ -80,11 +82,13 @@ public class WebController {
 
     @PostMapping("/edit/{slug}")
     public String edit(@PathVariable String slug,
-                       @RequestParam MultipartFile file,
+                       @RequestParam(required = false) MultipartFile file,
+                       @RequestParam(required = false) String title,
+                       @RequestParam(required = false) String sourceUrl,
                        Principal principal,
                        RedirectAttributes redirectAttributes) {
         try {
-            contentService.update(slug, file, principal.getName());
+            contentService.update(slug, file, principal.getName(), title, sourceUrl);
             redirectAttributes.addFlashAttribute("success", "Content '" + slug + "' updated successfully.");
         } catch (ContentService.ContentNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", "Content not found.");

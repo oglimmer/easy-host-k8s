@@ -52,16 +52,29 @@
                 <ul class="file-list">
                     <li class="file-list__item" th:each="f : ${content.files}">
                         <span class="file-list__icon">&#9671;</span>
-                        <span class="file-list__name" th:text="${f.filePath}"></span>
-                        <span class="file-list__type" th:text="${f.contentType}"></span>
+                        <span class="file-list__name" th:text="${f}"></span>
                     </li>
                 </ul>
             </div>
 
             <div class="card card--narrow animate-in animate-in--d2">
-                <p class="label" style="margin-bottom:1.5rem">Replace content</p>
+                <p class="label" style="margin-bottom:1.5rem">Update content</p>
                 <form th:action="@{/edit/{slug}(slug=${content.slug})}" method="post"
                       enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label class="form-label" for="title">Title <span style="color:var(--muted)">(optional)</span></label>
+                        <input class="form-input" type="text" id="title" name="title"
+                               th:value="${content.title}"
+                               placeholder="My Project">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="sourceUrl">Source URL <span style="color:var(--muted)">(optional)</span></label>
+                        <input class="form-input" type="url" id="sourceUrl" name="sourceUrl"
+                               th:value="${content.sourceUrl}"
+                               placeholder="https://github.com/user/repo">
+                    </div>
+
                     <div class="form-group">
                         <div class="drop-zone" id="dropZone">
                             <div class="drop-zone__icon">&#8593;</div>
@@ -69,7 +82,7 @@
                                 Drop a file here or <strong>browse</strong>
                             </p>
                             <p class="drop-zone__sub" id="fileName">HTML file or ZIP archive, up to 10 MB</p>
-                            <input type="file" name="file" id="file" required
+                            <input type="file" name="file" id="file"
                                    accept=".html,.htm,.zip"
                                    onchange="showFileName(this)">
                         </div>

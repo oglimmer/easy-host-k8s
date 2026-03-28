@@ -28,6 +28,12 @@ public class Content {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column
+    private String title;
+
+    @Column(name = "source_url", length = 2048)
+    private String sourceUrl;
+
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
