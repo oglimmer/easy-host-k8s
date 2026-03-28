@@ -37,6 +37,11 @@ public class WebController {
         return "dashboard";
     }
 
+    @GetMapping("/developers")
+    public String developers() {
+        return "developers";
+    }
+
     @GetMapping("/upload")
     public String uploadForm() {
         return "upload";

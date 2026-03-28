@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${status} + ' — easy-host'">Error — easy-host</title>
+    <script>document.documentElement.dataset.theme=localStorage.getItem('eh-theme')||'obsidian'</script>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="shell">
+        <header class="topbar">
+            <a class="topbar__brand" th:href="@{/}">
+                easy-host
+            </a>
+        </header>
+
+        <main class="main" style="display:flex;align-items:center;justify-content:center;min-height:60vh">
+            <div class="animate-in" style="text-align:center;max-width:28rem">
+                <div class="display display--lg" style="font-size:4rem;margin-bottom:0.5rem" th:text="${status}">500</div>
+                <h1 class="display" style="margin-bottom:1rem" th:text="${error}">Internal Server Error</h1>
+                <p style="opacity:0.6;margin-bottom:2rem"
+                   th:text="${message != null && !message.isEmpty()} ? ${message} : 'Something went wrong. Please try again later.'">
+                    Something went wrong. Please try again later.
+                </p>
+                <div style="display:flex;gap:0.75rem;justify-content:center">
+                    <a class="btn btn--primary" th:href="@{/dashboard}">Dashboard</a>
+                    <a class="btn btn--ghost" th:href="@{/developers}">Developers</a>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script th:src="@{/js/themes.js}"></script>
+</body>
+</html>

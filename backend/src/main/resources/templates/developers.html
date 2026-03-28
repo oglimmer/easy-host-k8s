@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer Portal — easy-host</title>
+    <script>document.documentElement.dataset.theme=localStorage.getItem('eh-theme')||'obsidian'</script>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="shell">
+        <header class="topbar">
+            <a class="topbar__brand" th:href="@{/developers}">
+                easy-host <span>developers</span>
+            </a>
+            <nav class="topbar__nav">
+                <a class="topbar__link" th:href="@{/dashboard}">Dashboard</a>
+            </nav>
+        </header>
+
+        <main class="main">
+            <div class="section-header animate-in">
+                <div class="section-header__title">
+                    <h1 class="display display--lg">Developer Portal</h1>
+                </div>
+            </div>
+
+            <div class="animate-in animate-in--d1" style="max-width:48rem">
+                <section style="margin-bottom:2rem">
+                    <h2 class="display" style="margin-bottom:0.75rem">Overview</h2>
+                    <p>easy-host lets you upload HTML files or ZIP archives and serve them on unique slug-based URLs.
+                       Upload via the REST API or the web UI, and your content is instantly available at
+                       <code>/s/{slug}</code>.</p>
+                </section>
+
+                <section style="margin-bottom:2rem">
+                    <h2 class="display" style="margin-bottom:0.75rem">API Reference</h2>
+                    <p style="margin-bottom:1rem">The full interactive API documentation is available via Swagger UI.</p>
+                    <a class="btn btn--primary" th:href="@{/swagger-ui.html}">Open Swagger UI</a>
+                    <a class="btn btn--ghost" th:href="@{/v3/api-docs}" style="margin-left:0.5rem">OpenAPI JSON</a>
+                </section>
+
+                <section style="margin-bottom:2rem">
+                    <h2 class="display" style="margin-bottom:0.75rem">Authentication</h2>
+                    <p>The REST API uses <strong>HTTP Basic Auth</strong>. Include your credentials with every request.</p>
+                    <pre class="code-block" style="margin-top:0.75rem;padding:1rem;border-radius:var(--radius);background:var(--surface-2);overflow-x:auto"><code>curl -u username:password https://content.oglimmer.com/api/content</code></pre>
+                </section>
+
+                <section style="margin-bottom:2rem">
+                    <h2 class="display" style="margin-bottom:0.75rem">Quick Start</h2>
+
+                    <h3 style="margin-top:1rem;margin-bottom:0.5rem">1. Upload a single HTML file</h3>
+                    <pre class="code-block" style="padding:1rem;border-radius:var(--radius);background:var(--surface-2);overflow-x:auto"><code>curl -u username:password \
+  -F "slug=my-page" \
+  -F "file=@index.html" \
+  -F "title=My Page" \
+  https://content.oglimmer.com/api/content</code></pre>
+
+                    <h3 style="margin-top:1rem;margin-bottom:0.5rem">2. Upload a ZIP archive</h3>
+                    <pre class="code-block" style="padding:1rem;border-radius:var(--radius);background:var(--surface-2);overflow-x:auto"><code>curl -u username:password \
+  -F "slug=my-site" \
+  -F "file=@site.zip" \
+  -F "title=My Site" \
+  https://content.oglimmer.com/api/content</code></pre>
+
+                    <h3 style="margin-top:1rem;margin-bottom:0.5rem">3. Access your content</h3>
+                    <pre class="code-block" style="padding:1rem;border-radius:var(--radius);background:var(--surface-2);overflow-x:auto"><code>https://content.oglimmer.com/s/my-page</code></pre>
+                </section>
+
+                <section style="margin-bottom:2rem">
+                    <h2 class="display" style="margin-bottom:0.75rem">Endpoints</h2>
+                    <div class="content-list">
+                        <div class="content-list__header label">
+                            <span>Method</span>
+                            <span>Path</span>
+                            <span>Description</span>
+                        </div>
+                        <div class="content-list__row">
+                            <div><code>GET</code></div>
+                            <div><code>/api/content</code></div>
+                            <div>List all your content</div>
+                        </div>
+                        <div class="content-list__row">
+                            <div><code>GET</code></div>
+                            <div><code>/api/content/{slug}</code></div>
+                            <div>Get content details</div>
+                        </div>
+                        <div class="content-list__row">
+                            <div><code>POST</code></div>
+                            <div><code>/api/content</code></div>
+                            <div>Create new content</div>
+                        </div>
+                        <div class="content-list__row">
+                            <div><code>PUT</code></div>
+                            <div><code>/api/content/{slug}</code></div>
+                            <div>Update existing content</div>
+                        </div>
+                        <div class="content-list__row">
+                            <div><code>DELETE</code></div>
+                            <div><code>/api/content/{slug}</code></div>
+                            <div>Delete content</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section style="margin-bottom:2rem">
+                    <h2 class="display" style="margin-bottom:0.75rem">Slug Rules</h2>
+                    <p>Slugs must match the pattern <code>^[a-z0-9][a-z0-9-]*[a-z0-9]$</code>:</p>
+                    <ul style="margin-top:0.5rem;padding-left:1.5rem">
+                        <li>Lowercase letters, digits, and hyphens only</li>
+                        <li>Must start and end with a letter or digit</li>
+                        <li>Minimum 2 characters</li>
+                    </ul>
+                </section>
+
+                <section style="margin-bottom:2rem">
+                    <h2 class="display" style="margin-bottom:0.75rem">Rate Limiting</h2>
+                    <p>API requests are limited to <strong>10 requests per second</strong> per IP address.
+                       Exceeding this limit returns <code>429 Too Many Requests</code>.</p>
+                </section>
+
+                <section style="margin-bottom:2rem">
+                    <h2 class="display" style="margin-bottom:0.75rem">Upload Limits</h2>
+                    <p>Maximum file size: <strong>10 MB</strong>. ZIP archives are extracted server-side;
+                       macOS metadata directories (<code>__MACOSX</code>) and hidden files are automatically filtered out.</p>
+                </section>
+            </div>
+        </main>
+    </div>
+    <script th:src="@{/js/themes.js}"></script>
+</body>
+</html>
