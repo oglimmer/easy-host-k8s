@@ -2389,3 +2389,29 @@ body {
         margin: -1.5rem -1.5rem 1.5rem;
     }
 }
+
+/* ═══════════════════════════════════════════════════════
+   LEGAL FOOTER
+   ═══════════════════════════════════════════════════════ */
+
+.legal-footer {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    padding: 2rem 1.5rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.8rem;
+}
+
+.legal-footer a {
+    color: var(--text-secondary);
+}
+
+.legal-footer a:hover {
+    color: var(--accent);
+}
+
+.legal-content p,
+.legal-content li {
+    line-height: 1.7;
+}

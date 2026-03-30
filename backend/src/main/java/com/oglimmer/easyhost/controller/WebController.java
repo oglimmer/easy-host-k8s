@@ -42,6 +42,21 @@ public class WebController {
         return "developers";
     }
 
+    @GetMapping("/imprint")
+    public String imprint() {
+        return "imprint";
+    }
+
+    @GetMapping("/privacy")
+    public String privacy() {
+        return "privacy";
+    }
+
+    @GetMapping("/terms")
+    public String terms() {
+        return "terms";
+    }
+
     @GetMapping("/upload")
     public String uploadForm() {
         return "upload";
