@@ -34,6 +34,9 @@ public class Content {
     @Column(name = "source_url", length = 2048)
     private String sourceUrl;
 
+    @Column(nullable = false)
+    private String creator;
+
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 

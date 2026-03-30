@@ -84,7 +84,7 @@ class ContentServiceTest {
         when(contentRepository.save(any())).thenReturn(saved);
         when(contentRepository.findBySlug("hello")).thenReturn(Optional.of(saved));
 
-        ContentResponse result = contentService.create("hello", file, "owner1", null, null);
+        ContentResponse result = contentService.create("hello", file, "owner1", null, null, null);
 
         assertThat(result.getSlug()).isEqualTo("hello");
         verify(contentRepository).save(any());
@@ -94,7 +94,7 @@ class ContentServiceTest {
     void create_throwsOnDuplicateSlug() {
         when(contentRepository.existsBySlug("taken")).thenReturn(true);
 
-        assertThatThrownBy(() -> contentService.create("taken", null, "owner1", null, null))
+        assertThatThrownBy(() -> contentService.create("taken", null, "owner1", null, null, null))
                 .isInstanceOf(ContentService.SlugAlreadyExistsException.class);
     }
 
@@ -107,7 +107,7 @@ class ContentServiceTest {
         when(contentRepository.save(any())).thenReturn(saved);
         when(contentRepository.findBySlug("ziptest")).thenReturn(Optional.of(saved));
 
-        contentService.create("ziptest", file, "owner1", null, null);
+        contentService.create("ziptest", file, "owner1", null, null, null);
 
         assertThat(saved.getFiles()).hasSize(2);
         assertThat(saved.getFiles().stream().map(ContentFile::getFilePath))
@@ -123,7 +123,7 @@ class ContentServiceTest {
         when(contentRepository.save(any())).thenReturn(saved);
         when(contentRepository.findBySlug("skiptest")).thenReturn(Optional.of(saved));
 
-        contentService.create("skiptest", file, "owner1", null, null);
+        contentService.create("skiptest", file, "owner1", null, null, null);
 
         assertThat(saved.getFiles()).hasSize(1);
         assertThat(saved.getFiles().get(0).getFilePath()).isEqualTo("real.html");
@@ -137,7 +137,7 @@ class ContentServiceTest {
         Content saved = buildContent("evil", "owner1");
         when(contentRepository.save(any())).thenReturn(saved);
 
-        assertThatThrownBy(() -> contentService.create("evil", file, "owner1", null, null))
+        assertThatThrownBy(() -> contentService.create("evil", file, "owner1", null, null, null))
                 .isInstanceOf(ContentService.InvalidFilePathException.class);
     }
 
@@ -189,7 +189,7 @@ class ContentServiceTest {
         when(contentRepository.findBySlug(slug)).thenReturn(Optional.of(saved));
         MockMultipartFile file = new MockMultipartFile("file", "p.html", "text/html", "<h1/>".getBytes());
 
-        assertThatCode(() -> contentService.create(slug, file, "owner", null, null)).doesNotThrowAnyException();
+        assertThatCode(() -> contentService.create(slug, file, "owner", null, null, null)).doesNotThrowAnyException();
     }
 
     @ParameterizedTest
@@ -198,7 +198,7 @@ class ContentServiceTest {
         when(contentRepository.existsBySlug(slug)).thenReturn(false);
         MockMultipartFile file = new MockMultipartFile("file", "p.html", "text/html", "<h1/>".getBytes());
 
-        assertThatThrownBy(() -> contentService.create(slug, file, "owner", null, null))
+        assertThatThrownBy(() -> contentService.create(slug, file, "owner", null, null, null))
                 .isInstanceOf(ContentService.InvalidSlugException.class);
     }
 

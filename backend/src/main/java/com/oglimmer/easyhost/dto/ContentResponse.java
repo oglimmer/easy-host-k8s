@@ -14,6 +14,7 @@ public class ContentResponse {
     private String title;
     private String sourceUrl;
     private String owner;
+    private String creator;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<String> files;

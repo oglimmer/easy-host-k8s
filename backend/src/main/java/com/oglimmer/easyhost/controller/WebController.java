@@ -67,10 +67,11 @@ public class WebController {
                          @RequestParam MultipartFile file,
                          @RequestParam(required = false) String title,
                          @RequestParam(required = false) String sourceUrl,
+                         @RequestParam(required = false) String creator,
                          Principal principal,
                          RedirectAttributes redirectAttributes) {
         try {
-            contentService.create(slug, file, principal.getName(), title, sourceUrl);
+            contentService.create(slug, file, principal.getName(), title, sourceUrl, creator);
             redirectAttributes.addFlashAttribute("success", "Content '" + slug + "' created successfully.");
         } catch (ContentService.SlugAlreadyExistsException e) {
             redirectAttributes.addFlashAttribute("error", "Slug '" + slug + "' already exists.");
@@ -105,10 +106,11 @@ public class WebController {
                        @RequestParam(required = false) MultipartFile file,
                        @RequestParam(required = false) String title,
                        @RequestParam(required = false) String sourceUrl,
+                       @RequestParam(required = false) String creator,
                        Principal principal,
                        RedirectAttributes redirectAttributes) {
         try {
-            contentService.update(slug, file, principal.getName(), title, sourceUrl);
+            contentService.update(slug, file, principal.getName(), title, sourceUrl, creator);
             redirectAttributes.addFlashAttribute("success", "Content '" + slug + "' updated successfully.");
         } catch (ContentService.ContentNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", "Content not found.");

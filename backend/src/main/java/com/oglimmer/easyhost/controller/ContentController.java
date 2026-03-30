@@ -39,8 +39,9 @@ public class ContentController {
                                                   @RequestParam MultipartFile file,
                                                   @RequestParam(required = false) String title,
                                                   @RequestParam(required = false) String sourceUrl,
+                                                  @RequestParam(required = false) String creator,
                                                   @AuthenticationPrincipal UserDetails user) throws IOException {
-        ContentResponse response = contentService.create(slug, file, user.getUsername(), title, sourceUrl);
+        ContentResponse response = contentService.create(slug, file, user.getUsername(), title, sourceUrl, creator);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -49,8 +50,9 @@ public class ContentController {
                                   @RequestParam(required = false) MultipartFile file,
                                   @RequestParam(required = false) String title,
                                   @RequestParam(required = false) String sourceUrl,
+                                  @RequestParam(required = false) String creator,
                                   @AuthenticationPrincipal UserDetails user) throws IOException {
-        return contentService.update(slug, file, user.getUsername(), title, sourceUrl);
+        return contentService.update(slug, file, user.getUsername(), title, sourceUrl, creator);
     }
 
     @DeleteMapping("/{slug}")

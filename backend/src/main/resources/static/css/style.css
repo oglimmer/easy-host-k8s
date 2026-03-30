@@ -1101,7 +1101,7 @@ body {
 
 .content-list__header {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto auto auto;
     gap: 0.5rem 1rem;
     padding: 0.75rem 1.25rem;
     border-bottom: 1px solid var(--border);
@@ -1109,7 +1109,7 @@ body {
 
 .content-list__row {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto auto auto;
     gap: 0.25rem 1rem;
     align-items: center;
     padding: 0.75rem 1.25rem;
@@ -1217,14 +1217,14 @@ body {
 
 /* Terminal: list style */
 [data-theme="terminal"] .content-list__header {
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto auto auto;
     padding: 0.5rem 0;
     border-bottom: 1px solid var(--border-strong);
     font-size: 0.9375rem;
 }
 
 [data-theme="terminal"] .content-list__row {
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto auto auto;
     padding: 0.625rem 0;
     border-bottom: 1px dashed var(--border);
 }

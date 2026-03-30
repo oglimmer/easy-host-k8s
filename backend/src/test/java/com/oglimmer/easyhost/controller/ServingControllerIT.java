@@ -87,6 +87,7 @@ class ServingControllerIT {
         Content content = Content.builder()
                 .slug(slug)
                 .owner("testowner")
+                .creator("testowner")
                 .build();
         ContentFile file = ContentFile.builder()
                 .content(content)

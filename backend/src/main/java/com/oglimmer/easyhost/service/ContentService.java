@@ -45,7 +45,7 @@ public class ContentService {
     }
 
     @Transactional
-    public ContentResponse create(String slug, MultipartFile file, String owner, String title, String sourceUrl) throws IOException {
+    public ContentResponse create(String slug, MultipartFile file, String owner, String title, String sourceUrl, String creator) throws IOException {
         if (contentRepository.existsBySlug(slug)) {
             throw new SlugAlreadyExistsException(slug);
         }
@@ -56,6 +56,7 @@ public class ContentService {
                 .owner(owner)
                 .title(title != null && !title.isBlank() ? title.strip() : slug)
                 .sourceUrl(sourceUrl != null && !sourceUrl.isBlank() ? sourceUrl.strip() : null)
+                .creator(creator != null && !creator.isBlank() ? creator.strip() : owner)
                 .build();
         content = contentRepository.save(content);
 
@@ -65,7 +66,7 @@ public class ContentService {
     }
 
     @Transactional
-    public ContentResponse update(String slug, MultipartFile file, String owner, String title, String sourceUrl) throws IOException {
+    public ContentResponse update(String slug, MultipartFile file, String owner, String title, String sourceUrl, String creator) throws IOException {
         Content content = contentRepository.findBySlug(slug)
                 .orElseThrow(() -> new ContentNotFoundException(slug));
         if (!content.getOwner().equals(owner)) {
@@ -77,6 +78,9 @@ public class ContentService {
         }
         if (sourceUrl != null) {
             content.setSourceUrl(!sourceUrl.isBlank() ? sourceUrl.strip() : null);
+        }
+        if (creator != null) {
+            content.setCreator(!creator.isBlank() ? creator.strip() : content.getOwner());
         }
 
         if (file != null && !file.isEmpty()) {
@@ -183,6 +187,7 @@ public class ContentService {
                 .title(content.getTitle())
                 .sourceUrl(content.getSourceUrl())
                 .owner(content.getOwner())
+                .creator(content.getCreator())
                 .createdAt(content.getCreatedAt())
                 .updatedAt(content.getUpdatedAt())
                 .files(content.getFiles().stream()
