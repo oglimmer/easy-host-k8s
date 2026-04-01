@@ -30,7 +30,7 @@ public class ContentService {
     @Transactional(readOnly = true)
     public List<ContentResponse> listByOwner(String owner) {
         return contentRepository.findByOwner(owner).stream()
-                .map(this::toResponse)
+                .map(this::toListResponse)
                 .toList();
     }
 
@@ -180,6 +180,19 @@ public class ContentService {
         }
     }
 
+    private ContentResponse toListResponse(Content content) {
+        return ContentResponse.builder()
+                .id(content.getId())
+                .slug(content.getSlug())
+                .title(content.getTitle())
+                .sourceUrl(content.getSourceUrl())
+                .owner(content.getOwner())
+                .creator(content.getCreator())
+                .createdAt(content.getCreatedAt())
+                .updatedAt(content.getUpdatedAt())
+                .build();
+    }
+
     private ContentResponse toResponse(Content content) {
         return ContentResponse.builder()
                 .id(content.getId())
@@ -190,9 +203,7 @@ public class ContentService {
                 .creator(content.getCreator())
                 .createdAt(content.getCreatedAt())
                 .updatedAt(content.getUpdatedAt())
-                .files(content.getFiles().stream()
-                        .map(ContentFile::getFilePath)
-                        .toList())
+                .files(contentFileRepository.findFilePathsByContentId(content.getId()))
                 .build();
     }
 

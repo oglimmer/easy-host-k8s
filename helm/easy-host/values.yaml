@@ -30,10 +30,10 @@ ingress:
 resources:
   limits:
     cpu: 1000m
-    memory: 512Mi
+    memory: 768Mi
   requests:
     cpu: 250m
-    memory: 256Mi
+    memory: 384Mi
 
 securityContext:
   runAsNonRoot: true
@@ -59,4 +59,4 @@ app:
     secretName: easy-host-oidc-secret
     issuerUrl: "https://id.oglimmer.de/realms/oglimmer"
     allowedUsers: "oglimmer@gmail.com"
-  javaOpts: "-Xmx256m -Xms128m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -XX:MaxRAM=400m"
+  javaOpts: "-Xmx384m -Xms384m -XX:MaxMetaspaceSize=192m -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:MaxRAM=600m"
