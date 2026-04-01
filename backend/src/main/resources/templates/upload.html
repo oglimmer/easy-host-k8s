@@ -17,6 +17,14 @@
                 <a class="topbar__link" th:href="@{/dashboard}">Content</a>
                 <a class="topbar__link topbar__link--active" th:href="@{/upload}">Upload</a>
                 <a class="topbar__link" th:href="@{/developers}">Developers</a>
+                <div class="topbar__apps">
+                    <button class="topbar__apps-toggle" type="button">Apps</button>
+                    <div class="topbar__apps-menu">
+                        <a href="https://infographics.oglimmer.com/">Infographics <span>infographics.oglimmer.com</span></a>
+                        <a href="https://news.oglimmer.com/">News <span>news.oglimmer.com</span></a>
+                        <a href="https://www.linky1.com/">Linky <span>www.linky1.com</span></a>
+                    </div>
+                </div>
                 <form th:action="@{/logout}" method="post" style="display:inline">
                     <button class="topbar__link" type="submit"
                             style="background:none;border:none;cursor:pointer;font:inherit;padding:0">

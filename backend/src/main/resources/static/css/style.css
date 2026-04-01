@@ -630,6 +630,112 @@ body {
     bottom: -1.15rem;
 }
 
+/* ── Apps Dropdown ────────────────────────────────────── */
+
+.topbar__apps {
+    position: relative;
+}
+
+.topbar__apps-toggle {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    transition: color 0.15s ease;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font: inherit;
+    padding: 0;
+}
+
+.topbar__apps-toggle:hover { color: var(--text); }
+
+.topbar__apps-toggle::after {
+    content: ' \25BE';
+    font-size: 0.7em;
+}
+
+.topbar__apps-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    right: 0;
+    min-width: 200px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 200;
+}
+
+.topbar__apps:hover .topbar__apps-menu,
+.topbar__apps:focus-within .topbar__apps-menu {
+    display: block;
+}
+
+.topbar__apps-menu a {
+    display: block;
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    transition: background 0.1s ease, color 0.1s ease;
+}
+
+.topbar__apps-menu a:hover {
+    background: var(--border);
+    color: var(--text);
+}
+
+.topbar__apps-menu a span {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    margin-top: 0.15rem;
+}
+
+[data-theme="paper"] .topbar__apps-toggle {
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+[data-theme="paper"] .topbar__apps-menu {
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+[data-theme="terminal"] .topbar__apps-toggle {
+    font-size: 1rem;
+}
+
+[data-theme="terminal"] .topbar__apps-toggle::before {
+    content: '[';
+    color: var(--text-tertiary);
+}
+
+[data-theme="terminal"] .topbar__apps-toggle::after {
+    content: ']';
+    color: var(--text-tertiary);
+    font-size: inherit;
+}
+
+[data-theme="terminal"] .topbar__apps-menu {
+    border-radius: 0;
+    border: 1px solid var(--border-strong);
+}
+
+[data-theme="bauhaus"] .topbar__apps-toggle {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+[data-theme="bauhaus"] .topbar__apps-menu {
+    border-radius: 0;
+}
+
 /* ── Main ─────────────────────────────────────────────── */
 
 .main {
