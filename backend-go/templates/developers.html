@@ -1,0 +1,55 @@
+{{define "title"}}Developers{{end}}
+{{template "head" .}}
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="/dashboard" class="nav-brand">easy-host</a>
+        <div class="nav-links">
+            <a href="/login">Login</a>
+        </div>
+    </div>
+</nav>
+<main class="container content-page">
+    <h1>Developer Portal</h1>
+
+    <h2>Authentication</h2>
+    <p>The API uses HTTP Basic Authentication. Include your credentials in the <code>Authorization</code> header.</p>
+
+    <h2>Quick Start</h2>
+    <pre><code># Upload content
+curl -u admin:changeme -F "slug=hello" -F "file=@index.html" \
+  http://localhost:8080/api/content
+
+# View it
+open http://localhost:8080/s/hello</code></pre>
+
+    <h2>API Endpoints</h2>
+    <div class="table-wrap">
+    <table class="table">
+        <thead>
+            <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>GET</code></td><td>/api/content</td><td>List all your content</td></tr>
+            <tr><td><code>POST</code></td><td>/api/content</td><td>Create new content (multipart: slug, file, title?, sourceUrl?, creator?)</td></tr>
+            <tr><td><code>GET</code></td><td>/api/content/{slug}</td><td>Get content details</td></tr>
+            <tr><td><code>PUT</code></td><td>/api/content/{slug}</td><td>Update content</td></tr>
+            <tr><td><code>DELETE</code></td><td>/api/content/{slug}</td><td>Delete content</td></tr>
+        </tbody>
+    </table>
+    </div>
+
+    <h2>Slug Rules</h2>
+    <ul>
+        <li>Lowercase letters, numbers, and hyphens only</li>
+        <li>Must start and end with a letter or number</li>
+        <li>Pattern: <code>^[a-z0-9]([a-z0-9-]*[a-z0-9])?$</code></li>
+    </ul>
+
+    <h2>Limits</h2>
+    <ul>
+        <li>Max upload size: <strong>10 MB</strong></li>
+        <li>Rate limit: <strong>10 requests/second</strong> per IP</li>
+        <li>ZIP uploads: <code>__MACOSX</code> and hidden files are filtered</li>
+    </ul>
+</main>
+{{template "footer" .}}

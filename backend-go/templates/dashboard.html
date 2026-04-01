@@ -1,0 +1,121 @@
+{{define "title"}}Dashboard{{end}}
+{{template "head" .}}
+{{template "nav" .}}
+<main class="container">
+    <div class="page-header">
+        <h1>Dashboard</h1>
+        <div class="page-header-actions">
+            <a id="btnEdit" href="#" class="btn btn-small toolbar-action" style="display:none">Edit</a>
+            <form id="deleteForm" method="post" action="" style="display:none" onsubmit="return confirm('Delete this item?')">
+                <button type="submit" class="btn btn-small btn-danger toolbar-action">Delete</button>
+            </form>
+            <a href="/upload" class="btn btn-primary">New Upload</a>
+        </div>
+    </div>
+
+    {{if .Success}}<div class="flash flash-success">{{.Success}}</div>{{end}}
+    {{if .Error}}<div class="flash flash-error">{{.Error}}</div>{{end}}
+
+    <div class="table-toolbar">
+        <span class="item-count">{{.Count}} item{{if ne .Count 1}}s{{end}}</span>
+        <div class="page-size-picker">
+            <span class="page-size-label">Show</span>
+            <a href="?size=10&page=1" class="page-size-opt{{if eq .PageSize 10}} page-size-active{{end}}">10</a>
+            <a href="?size=25&page=1" class="page-size-opt{{if eq .PageSize 25}} page-size-active{{end}}">25</a>
+            <a href="?size=50&page=1" class="page-size-opt{{if eq .PageSize 50}} page-size-active{{end}}">50</a>
+            <a href="?size=100&page=1" class="page-size-opt{{if eq .PageSize 100}} page-size-active{{end}}">100</a>
+        </div>
+    </div>
+
+    {{if .Items}}
+    <div class="table-wrap">
+    <table class="table table-selectable" id="contentTable">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Slug</th>
+                <th>Creator</th>
+                <th>Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Items}}
+            <tr data-slug="{{.Slug}}">
+                <td>{{.Title}}</td>
+                <td><a href="/s/{{.Slug}}" target="_blank" onclick="event.stopPropagation()">/s/{{.Slug}}</a></td>
+                <td>{{.Creator}}</td>
+                <td>{{.UpdatedAt.Format "2006-01-02 15:04"}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    </div>
+
+    {{if gt .TotalPages 1}}
+    <nav class="pagination">
+        {{if gt .Page 1}}
+        <a href="?page={{sub .Page 1}}&size={{.PageSize}}" class="pagination-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+        {{else}}
+        <span class="pagination-btn pagination-disabled">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </span>
+        {{end}}
+
+        {{range $p := seq 1 $.TotalPages}}
+        <a href="?page={{$p}}&size={{$.PageSize}}" class="pagination-btn{{if eq $p $.Page}} pagination-active{{end}}">{{$p}}</a>
+        {{end}}
+
+        {{if lt .Page .TotalPages}}
+        <a href="?page={{add .Page 1}}&size={{.PageSize}}" class="pagination-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+        {{else}}
+        <span class="pagination-btn pagination-disabled">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </span>
+        {{end}}
+    </nav>
+    {{end}}
+
+    {{else}}
+    <div class="empty-state">
+        <p>No content yet. <a href="/upload">Upload something!</a></p>
+    </div>
+    {{end}}
+</main>
+
+<script>
+(function() {
+    var table = document.getElementById('contentTable');
+    if (!table) return;
+    var btnEdit = document.getElementById('btnEdit');
+    var deleteForm = document.getElementById('deleteForm');
+    var selected = null;
+
+    table.addEventListener('click', function(e) {
+        var row = e.target.closest('tr[data-slug]');
+        if (!row) return;
+
+        if (selected === row) {
+            row.classList.remove('row-selected');
+            selected = null;
+            btnEdit.style.display = 'none';
+            deleteForm.style.display = 'none';
+            return;
+        }
+
+        if (selected) selected.classList.remove('row-selected');
+        row.classList.add('row-selected');
+        selected = row;
+
+        var slug = row.getAttribute('data-slug');
+        btnEdit.href = '/edit/' + slug;
+        btnEdit.style.display = '';
+        deleteForm.action = '/delete/' + slug;
+        deleteForm.style.display = '';
+    });
+})();
+</script>
+{{template "footer" .}}

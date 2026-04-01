@@ -1,0 +1,85 @@
+{{define "title"}}Edit{{end}}
+{{template "head" .}}
+{{template "nav" .}}
+<main class="container">
+    <div class="page-header">
+        <h1>Edit: {{.Content.Slug}}</h1>
+        <a href="/s/{{.Content.Slug}}" target="_blank" class="btn">View Live</a>
+    </div>
+
+    <form method="post" action="/edit/{{.Content.Slug}}" enctype="multipart/form-data" class="form-card">
+        <div class="field">
+            <label for="title">Title</label>
+            <input type="text" id="title" name="title" value="{{.Content.Title}}">
+        </div>
+
+        <div class="field">
+            <label for="sourceUrl">Source URL</label>
+            <input type="url" id="sourceUrl" name="sourceUrl" value="{{.Content.SourceURL}}">
+        </div>
+
+        <div class="field">
+            <label for="creator">Creator</label>
+            <input type="text" id="creator" name="creator" value="{{.Content.Creator}}">
+        </div>
+
+        <div class="field">
+            <label>Current Files ({{len .Content.Files}})</label>
+            <ul class="file-list">
+                {{range .Content.Files}}
+                <li>{{.}}</li>
+                {{end}}
+            </ul>
+        </div>
+
+        <div class="field">
+            <label>Replace Files <small style="text-transform:none;letter-spacing:0;font-weight:400">(optional, HTML or ZIP)</small></label>
+            <div class="dropzone" id="dropzone">
+                <input type="file" id="file" name="file" accept=".html,.htm,.zip" class="dropzone-input">
+                <div class="dropzone-idle" id="dropzoneIdle">
+                    <div class="dropzone-icon">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <p class="dropzone-text">Drag & drop to replace files</p>
+                    <p class="dropzone-hint">or <span class="dropzone-browse">browse</span> to choose</p>
+                    <div class="dropzone-formats">
+                        <span class="dropzone-badge">.html</span>
+                        <span class="dropzone-badge">.htm</span>
+                        <span class="dropzone-badge">.zip</span>
+                    </div>
+                </div>
+                <div class="dropzone-preview" id="dropzonePreview" style="display:none">
+                    <div class="dropzone-file-icon" id="dropzoneFileIcon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                            <polyline points="13 2 13 9 20 9"/>
+                        </svg>
+                    </div>
+                    <div class="dropzone-file-info">
+                        <p class="dropzone-file-name" id="dropzoneFileName"></p>
+                        <p class="dropzone-file-meta" id="dropzoneFileMeta"></p>
+                    </div>
+                    <button type="button" class="dropzone-remove" id="dropzoneRemove" title="Remove file">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="/dashboard" class="btn">Cancel</a>
+        </div>
+    </form>
+</main>
+
+<script>
+initDropzone('dropzone', 'file', false);
+</script>
+{{template "footer" .}}

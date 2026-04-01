@@ -1,0 +1,28 @@
+{{define "title"}}Login{{end}}
+{{template "head" .}}
+<div class="login-page">
+    <div class="login-box">
+        <h1>easy-host</h1>
+        <p class="subtitle">Content hosting made simple</p>
+        {{if .Error}}<div class="flash flash-error">{{.Error}}</div>{{end}}
+        <form method="post" action="/login">
+            <div class="field">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required autofocus placeholder="Enter your username">
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Enter your password">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Sign in</button>
+        </form>
+        {{if .OIDCEnabled}}
+        <div class="divider"><span>or</span></div>
+        <a href="/auth/login" class="btn btn-full btn-sso">Sign in with SSO</a>
+        {{end}}
+        <div class="login-footer">
+            <a href="/developers">Developer Portal</a>
+        </div>
+    </div>
+</div>
+{{template "footer" .}}

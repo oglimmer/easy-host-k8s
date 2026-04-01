@@ -1,0 +1,60 @@
+{{define "head"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{template "title" .}} - easy-host</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='25' y='25' width='50' height='50' rx='8' fill='%23e2a84b' transform='rotate(45 50 50)'/></svg>">
+    <script src="/js/dropzone.js"></script>
+</head>
+<body>
+{{end}}
+
+{{define "nav"}}
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="/dashboard" class="nav-brand">easy-host</a>
+        <div class="nav-links">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/upload">Upload</a>
+            <a href="/developers">Developers</a>
+            <div class="nav-dropdown">
+                <button class="nav-dropdown-toggle" type="button">Apps <span class="nav-dropdown-arrow">&#9662;</span></button>
+                <div class="nav-dropdown-menu">
+                    <a href="https://content.oglimmer.com/" class="nav-dropdown-item nav-dropdown-active">
+                        <span class="nav-app-icon" style="background:#e2a84b">H</span>
+                        <span>easy-host</span>
+                    </a>
+                    <a href="https://infographics.oglimmer.com/" class="nav-dropdown-item">
+                        <span class="nav-app-icon" style="background:#6c9bcf">I</span>
+                        <span>Infographics</span>
+                    </a>
+                    <a href="https://news.oglimmer.com/" class="nav-dropdown-item">
+                        <span class="nav-app-icon" style="background:#d4766e">N</span>
+                        <span>News</span>
+                    </a>
+                    <a href="https://www.linky1.com/" class="nav-dropdown-item">
+                        <span class="nav-app-icon" style="background:#7aba7e">L</span>
+                        <span>Linky1</span>
+                    </a>
+                </div>
+            </div>
+            <form method="post" action="/logout" style="display:inline">
+                <button type="submit" class="btn-link">Logout</button>
+            </form>
+        </div>
+    </div>
+</nav>
+{{end}}
+
+{{define "footer"}}
+<footer class="footer">
+    <a href="/imprint">Imprint</a>
+    <a href="/privacy">Privacy</a>
+    <a href="/terms">Terms</a>
+</footer>
+</body>
+</html>
+{{end}}

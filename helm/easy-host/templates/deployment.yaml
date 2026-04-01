@@ -79,6 +79,8 @@ spec:
                   key: client-secret
             - name: OIDC_ALLOWED_USERS
               value: {{ .Values.app.oidc.allowedUsers | quote }}
+            - name: BASE_URL
+              value: "https://{{ .Values.ingress.host }}"
           livenessProbe:
             httpGet:
               path: /actuator/health

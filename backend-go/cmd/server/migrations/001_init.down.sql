@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS content_file;
+DROP TABLE IF EXISTS content;
