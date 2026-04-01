@@ -114,7 +114,7 @@ func (rl *RateLimiter) cleanup() {
 }
 
 func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
-	excluded := []string{"/login", "/dashboard", "/upload", "/edit/", "/delete/", "/actuator", "/css/", "/js/", "/"}
+	excluded := []string{"/login", "/dashboard", "/upload", "/edit/", "/delete/", "/actuator", "/css/", "/js/", "/fonts/", "/"}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		for _, ex := range excluded {

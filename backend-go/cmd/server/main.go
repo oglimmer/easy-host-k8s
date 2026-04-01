@@ -89,6 +89,7 @@ func main() {
 	staticDir := findStaticDir()
 	r.Handle("/css/*", http.StripPrefix("/css/", http.FileServer(http.Dir(filepath.Join(staticDir, "css")))))
 	r.Handle("/js/*", http.StripPrefix("/js/", http.FileServer(http.Dir(filepath.Join(staticDir, "js")))))
+	r.Handle("/fonts/*", http.StripPrefix("/fonts/", http.FileServer(http.Dir(filepath.Join(staticDir, "fonts")))))
 
 	// Public routes
 	r.Get("/login", webHandler.LoginPage)
