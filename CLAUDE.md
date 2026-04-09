@@ -4,28 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**easy-host** is a web content hosting service where users upload HTML/files via API or web UI and serve them on unique slug-based URLs. Built with Spring Boot 3.4 (Java 21), MariaDB, deployed via Docker/Kubernetes with Helm.
+**easy-host** is a web content hosting service where users upload HTML/files via API or web UI and serve them on unique slug-based URLs. Built with Go 1.24, MariaDB, deployed via Docker/Kubernetes with Helm.
 
 ## Build & Development Commands
 
 ```bash
 # Build
-cd backend && ./mvnw package
+cd backend-go && CGO_ENABLED=0 go build -o server ./cmd/server
 
-# Unit tests only
-cd backend && ./mvnw test
-
-# Integration tests (requires Docker for Testcontainers)
-cd backend && ./mvnw verify
+# Run tests
+cd backend-go && go test ./...
 
 # Run single test
-cd backend && ./mvnw test -Dtest=ClassName#methodName
+cd backend-go && go test -run TestName ./internal/service/
 
 # Local development (start DB first)
 docker compose up db
-cd backend && ./mvnw spring-boot:run
+cd backend-go && go run ./cmd/server
 
-# Full stack
+# Full stack via Docker
 docker compose up
 
 # Helm chart validation
@@ -36,42 +33,47 @@ helm lint helm/easy-host/
 
 ## Architecture
 
+### Backend (backend-go/)
+
+Go application using chi router, plain `database/sql` (no ORM), and `html/template` for server-side rendering.
+
+**Layer structure:**
+- `cmd/server/main.go` — entry point, wiring, route definitions, embedded SQL migrations
+- `internal/handler/` — HTTP handlers: `api.go` (REST CRUD), `web.go` (UI), `serving.go` (public file serving), `oidc.go` (optional OIDC auth), `health.go` (actuator)
+- `internal/service/` — business logic: validation, ZIP extraction, MIME detection
+- `internal/store/` — data access layer with raw SQL queries
+- `internal/model/` — data structures
+- `internal/middleware/` — request logging, security headers, rate limiting (10 req/sec per IP), BasicAuth, SessionAuth
+- `internal/auth/` — in-memory user store with bcrypt
+- `internal/config/` — env-var config loading (supports `SPRING_DATASOURCE_URL` for backward compat)
+
 ### Request Flow
 
-Two Spring Security filter chains:
-1. **Order 1 (API)**: Basic Auth for `/api/**` and `/actuator/**` — roles: USER, ACTUATOR
-2. **Order 2 (Web)**: Form login for dashboard/upload/edit — role: USER
+Two auth mechanisms:
+1. **BasicAuth**: for `/api/content/**` (role: USER) and `/actuator/**` (role: ACTUATOR)
+2. **SessionAuth**: cookie-based for web UI (`/dashboard`, `/upload`, `/edit`, `/delete`)
 
-Public serving at `/s/{slug}` requires no auth. Slug resolves to stored files (index.html for base URL).
+Public serving at `/s/{slug}` requires no auth. Optional OIDC authentication via env vars.
 
 ### Content Lifecycle
 
 - Upload via REST (`POST /api/content`) or Web UI (`/upload`)
 - Single file → stored as `index.html`; ZIP → extracted preserving structure (filters `__MACOSX`, hidden files)
 - Files stored as `LONGBLOB` in `content_file` table, linked to `content` via FK
-- Served publicly at `/s/{slug}` with content-type guessing and 1-hour cache headers
-
-### Key Components
-
-- **ContentController** — REST API CRUD for content
-- **WebController** — Thymeleaf-based web UI (dashboard, upload, edit)
-- **ServingController** — Public file serving at `/s/{slug}/{path}`
-- **ContentService** — Business logic: file handling, ZIP extraction, MIME detection
-- **RateLimitFilter** — Guava-based 10 req/sec per IP, 429 on exceed
+- Served publicly at `/s/{slug}` with content-type detection and cache headers
 
 ### Data Model
 
-- `content` — slug (unique, validated: `^[a-z0-9][a-z0-9-]*[a-z0-9]$`), owner, timestamps
+- `content` — slug (unique, validated: `^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`), owner, timestamps
 - `content_file` — file_path, file_data (LONGBLOB), content_type; FK to content with cascade delete
-- Flyway migrations in `src/main/resources/db/migration/`
+- Migrations in `cmd/server/migrations/`, embedded via `//go:embed` and applied on startup with golang-migrate
 
 ### Configuration
 
-Environment-variable driven (12-factor). Key settings in `application.yml`:
-- Database connection, credentials
-- User credentials (actuator + app user) via env vars
-- 10MB upload limit, JPA validate mode (schema via Flyway only)
+Environment-variable driven (12-factor). Key vars: `PORT`, `DATABASE_URL` (or `SPRING_DATASOURCE_URL`), `DB_HOST`/`DB_PORT`/`DB_NAME`, `SPRING_DATASOURCE_USERNAME`/`PASSWORD`, `APP_ADMIN_USERNAME`/`PASSWORD`, `ACTUATOR_USERNAME`/`PASSWORD`, `SESSION_SECRET`, `OIDC_ISSUER_URL`/`OIDC_CLIENT_ID`/`OIDC_CLIENT_SECRET`/`OIDC_ALLOWED_USERS`. 10MB upload limit.
 
 ## CI/CD
 
-GitHub Actions (`.github/workflows/build.yml`): builds Docker image on push/PR to main, pushes to `registry.oglimmer.com` on main only. Helm chart deploys to K8s with host `content.oglimmer.com`.
+GitHub Actions (`.github/workflows/build.yml`): builds Docker image on push/PR to main, pushes to `registry.oglimmer.com` on main only. Helm chart in `helm/easy-host/` deploys to K8s with host `content.oglimmer.com`.
+
+**Note:** CI still references `backend/` (former Spring Boot). The Go backend lives in `backend-go/`.
