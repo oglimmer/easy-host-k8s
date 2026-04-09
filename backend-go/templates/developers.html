@@ -10,33 +10,190 @@
 </nav>
 <main class="container content-page">
     <h1>Developer Portal</h1>
+    <p>Integrate with easy-host using the REST API. Upload, manage, and serve HTML content programmatically.</p>
 
     <h2>Authentication</h2>
-    <p>The API uses HTTP Basic Authentication. Include your credentials in the <code>Authorization</code> header.</p>
+    <p>All API endpoints require <strong>HTTP Basic Authentication</strong>. Include your credentials in every request.</p>
+    <pre><code>curl -u username:password https://content.oglimmer.com/api/content</code></pre>
 
     <h2>Quick Start</h2>
-    <pre><code># Upload content
-curl -u admin:changeme -F "slug=hello" -F "file=@index.html" \
-  http://localhost:8080/api/content
+    <pre><code># 1. Upload a single HTML file
+curl -u admin:changeme \
+  -F "slug=hello" \
+  -F "file=@index.html" \
+  https://content.oglimmer.com/api/content
 
-# View it
-open http://localhost:8080/s/hello</code></pre>
+# 2. Upload a ZIP archive with multiple files
+curl -u admin:changeme \
+  -F "slug=my-site" \
+  -F "file=@site.zip" \
+  -F "title=My Website" \
+  https://content.oglimmer.com/api/content
 
-    <h2>API Endpoints</h2>
-    <div class="table-wrap">
+# 3. View your content
+open https://content.oglimmer.com/s/hello</code></pre>
+
+    <h2>Base URL</h2>
+    <p>All API endpoints are relative to:</p>
+    <pre><code>https://content.oglimmer.com/api/content</code></pre>
+
+    <h2>Endpoints</h2>
+
+    <h3 style="color: var(--text); font-size: 1.05em; margin-top: 28px;">List All Content</h3>
+    <p><code>GET /api/content</code></p>
+    <p>Returns all content items owned by the authenticated user.</p>
+    <p><strong>Example request:</strong></p>
+    <pre><code>curl -u admin:changeme https://content.oglimmer.com/api/content</code></pre>
+    <p><strong>Response:</strong> <code>200 OK</code></p>
+    <pre><code>[
+  {
+    "id": 1,
+    "slug": "hello",
+    "title": "My Page",
+    "sourceUrl": "https://example.com",
+    "owner": "admin",
+    "creator": "John Doe",
+    "allowExternalResources": false,
+    "createdAt": "2026-04-09T10:00:00Z",
+    "updatedAt": "2026-04-09T10:30:00Z",
+    "files": ["index.html", "style.css"]
+  }
+]</code></pre>
+
+    <h3 style="color: var(--text); font-size: 1.05em; margin-top: 28px;">Create Content</h3>
+    <p><code>POST /api/content</code></p>
+    <p>Upload a new content item. Accepts <code>multipart/form-data</code>.</p>
+
+    <div class="table-wrap" style="margin: 16px 0;">
     <table class="table">
         <thead>
-            <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+            <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
         </thead>
         <tbody>
-            <tr><td><code>GET</code></td><td>/api/content</td><td>List all your content</td></tr>
-            <tr><td><code>POST</code></td><td>/api/content</td><td>Create new content (multipart: slug, file, title?, sourceUrl?, creator?)</td></tr>
-            <tr><td><code>GET</code></td><td>/api/content/{slug}</td><td>Get content details</td></tr>
-            <tr><td><code>PUT</code></td><td>/api/content/{slug}</td><td>Update content</td></tr>
-            <tr><td><code>DELETE</code></td><td>/api/content/{slug}</td><td>Delete content</td></tr>
+            <tr><td><code>slug</code></td><td>string</td><td>Yes</td><td>Unique URL identifier for your content</td></tr>
+            <tr><td><code>file</code></td><td>file</td><td>Yes</td><td>HTML file or ZIP archive (max 10 MB)</td></tr>
+            <tr><td><code>title</code></td><td>string</td><td>No</td><td>Display title for the content</td></tr>
+            <tr><td><code>sourceUrl</code></td><td>string</td><td>No</td><td>Reference URL for the original source</td></tr>
+            <tr><td><code>creator</code></td><td>string</td><td>No</td><td>Name of the content creator</td></tr>
+            <tr><td><code>allowExternalResources</code></td><td>string</td><td>No</td><td><code>"true"</code> or <code>"false"</code> &mdash; allow loading external resources</td></tr>
         </tbody>
     </table>
     </div>
+
+    <p><strong>Example request:</strong></p>
+    <pre><code>curl -u admin:changeme \
+  -F "slug=my-page" \
+  -F "file=@index.html" \
+  -F "title=My Page" \
+  -F "creator=John Doe" \
+  -F "allowExternalResources=false" \
+  https://content.oglimmer.com/api/content</code></pre>
+    <p><strong>Response:</strong> <code>201 Created</code></p>
+    <pre><code>{
+  "id": 2,
+  "slug": "my-page",
+  "title": "My Page",
+  "owner": "admin",
+  "creator": "John Doe",
+  "allowExternalResources": false,
+  "createdAt": "2026-04-09T11:00:00Z",
+  "updatedAt": "2026-04-09T11:00:00Z",
+  "files": ["index.html"]
+}</code></pre>
+
+    <p><strong>Error responses:</strong></p>
+    <ul>
+        <li><code>400 Bad Request</code> &mdash; Missing file or invalid slug format</li>
+        <li><code>409 Conflict</code> &mdash; Slug already exists</li>
+        <li><code>413 Request Entity Too Large</code> &mdash; File exceeds 10 MB limit</li>
+    </ul>
+
+    <h3 style="color: var(--text); font-size: 1.05em; margin-top: 28px;">Get Content</h3>
+    <p><code>GET /api/content/{slug}</code></p>
+    <p>Retrieve details for a specific content item.</p>
+    <p><strong>Example request:</strong></p>
+    <pre><code>curl -u admin:changeme https://content.oglimmer.com/api/content/my-page</code></pre>
+    <p><strong>Response:</strong> <code>200 OK</code> &mdash; Returns a content object (same structure as above).</p>
+    <p><strong>Error responses:</strong></p>
+    <ul>
+        <li><code>404 Not Found</code> &mdash; No content with that slug</li>
+    </ul>
+
+    <h3 style="color: var(--text); font-size: 1.05em; margin-top: 28px;">Update Content</h3>
+    <p><code>PUT /api/content/{slug}</code></p>
+    <p>Update an existing content item. All fields are optional &mdash; only provided fields are updated. Accepts <code>multipart/form-data</code>.</p>
+
+    <div class="table-wrap" style="margin: 16px 0;">
+    <table class="table">
+        <thead>
+            <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>file</code></td><td>file</td><td>New file to replace existing content</td></tr>
+            <tr><td><code>title</code></td><td>string</td><td>Updated title</td></tr>
+            <tr><td><code>sourceUrl</code></td><td>string</td><td>Updated source URL</td></tr>
+            <tr><td><code>creator</code></td><td>string</td><td>Updated creator name</td></tr>
+            <tr><td><code>allowExternalResources</code></td><td>string</td><td><code>"true"</code> or <code>"false"</code></td></tr>
+        </tbody>
+    </table>
+    </div>
+
+    <p><strong>Example request:</strong></p>
+    <pre><code>curl -X PUT -u admin:changeme \
+  -F "file=@updated.html" \
+  -F "title=Updated Page" \
+  https://content.oglimmer.com/api/content/my-page</code></pre>
+    <p><strong>Response:</strong> <code>200 OK</code> &mdash; Returns the updated content object.</p>
+    <p><strong>Error responses:</strong></p>
+    <ul>
+        <li><code>400 Bad Request</code> &mdash; Invalid slug format</li>
+        <li><code>404 Not Found</code> &mdash; No content with that slug</li>
+    </ul>
+
+    <h3 style="color: var(--text); font-size: 1.05em; margin-top: 28px;">Delete Content</h3>
+    <p><code>DELETE /api/content/{slug}</code></p>
+    <p>Permanently delete a content item and all its files.</p>
+    <p><strong>Example request:</strong></p>
+    <pre><code>curl -X DELETE -u admin:changeme \
+  https://content.oglimmer.com/api/content/my-page</code></pre>
+    <p><strong>Response:</strong> <code>204 No Content</code> &mdash; Empty response body on success.</p>
+    <p><strong>Error responses:</strong></p>
+    <ul>
+        <li><code>404 Not Found</code> &mdash; No content with that slug</li>
+    </ul>
+
+    <h2>Response Object</h2>
+    <p>All endpoints that return content use this structure:</p>
+    <div class="table-wrap" style="margin: 16px 0;">
+    <table class="table">
+        <thead>
+            <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>id</code></td><td>integer</td><td>Unique content ID</td></tr>
+            <tr><td><code>slug</code></td><td>string</td><td>URL identifier</td></tr>
+            <tr><td><code>title</code></td><td>string</td><td>Content title</td></tr>
+            <tr><td><code>sourceUrl</code></td><td>string</td><td>Source URL (omitted if empty)</td></tr>
+            <tr><td><code>owner</code></td><td>string</td><td>Username of the content owner</td></tr>
+            <tr><td><code>creator</code></td><td>string</td><td>Creator name</td></tr>
+            <tr><td><code>allowExternalResources</code></td><td>boolean</td><td>Whether external resource loading is allowed</td></tr>
+            <tr><td><code>createdAt</code></td><td>string</td><td>ISO 8601 timestamp</td></tr>
+            <tr><td><code>updatedAt</code></td><td>string</td><td>ISO 8601 timestamp</td></tr>
+            <tr><td><code>files</code></td><td>array</td><td>List of file paths in this content</td></tr>
+        </tbody>
+    </table>
+    </div>
+
+    <h2>Public Serving</h2>
+    <p>Uploaded content is publicly accessible at:</p>
+    <pre><code>https://content.oglimmer.com/s/{slug}
+https://content.oglimmer.com/s/{slug}/{path}</code></pre>
+    <ul>
+        <li>The base URL (<code>/s/{slug}</code>) serves <code>index.html</code></li>
+        <li>Sub-paths resolve to files within the uploaded content</li>
+        <li>Responses include appropriate <code>Content-Type</code> headers and 1-hour cache headers</li>
+        <li>No authentication required</li>
+    </ul>
 
     <h2>Slug Rules</h2>
     <ul>
@@ -48,8 +205,8 @@ open http://localhost:8080/s/hello</code></pre>
     <h2>Limits</h2>
     <ul>
         <li>Max upload size: <strong>10 MB</strong></li>
-        <li>Rate limit: <strong>10 requests/second</strong> per IP</li>
-        <li>ZIP uploads: <code>__MACOSX</code> and hidden files are filtered</li>
+        <li>Rate limit: <strong>10 requests/second</strong> per IP (returns <code>429 Too Many Requests</code> when exceeded)</li>
+        <li>ZIP uploads: <code>__MACOSX</code> and hidden files are automatically filtered</li>
     </ul>
 </main>
 {{template "footer" .}}

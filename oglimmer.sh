@@ -16,10 +16,7 @@ IMAGES=()
 DEPLOYMENT="$DEFAULT_DEPLOYMENT"
 
 # Directories
-VARIANT="${VARIANT:-java}"
-BACKEND_DIR_JAVA="$SCRIPT_DIR/backend"
-BACKEND_DIR_GO="$SCRIPT_DIR/backend-go"
-BACKEND_DIR="$BACKEND_DIR_JAVA"
+BACKEND_DIR="$SCRIPT_DIR/backend-go"
 
 # Default options (can be overridden by environment variables)
 VERBOSE="${VERBOSE:-false}"
@@ -114,11 +111,6 @@ BUILD OPTIONS:
                                - multi: Build for both amd64 and arm64 (multi-platform)
                                - auto: Detect current platform automatically
 
-    # Variant options
-    --variant VARIANT          Backend variant to build:
-                               - java: Spring Boot backend (default)
-                               - go: Go backend
-
     -h, --help              Show this help message
 
 EXAMPLES:
@@ -128,7 +120,6 @@ EXAMPLES:
     ${SCRIPT_NAME} show                                         # Show current version
     ${SCRIPT_NAME} build --registries my-registry.com           # Use custom registry
     ${SCRIPT_NAME} build --platform amd64                       # Build for AMD64 only
-    ${SCRIPT_NAME} build --variant go                          # Build Go backend
 
 ENVIRONMENT VARIABLES:
     DEPLOYMENT              Override default deployment name
@@ -138,7 +129,6 @@ ENVIRONMENT VARIABLES:
     DRY_RUN                 Enable dry-run mode (true/false)
     PUSH                    Enable/disable pushing to registry (true/false)
     RESTART                 Enable/disable Kubernetes restart (true/false)
-    VARIANT                 Backend variant to build (java/go, default: java)
 
 EOF
 }
@@ -201,10 +191,6 @@ parse_args() {
                 PLATFORM="$2"
                 shift 2
                 ;;
-            --variant)
-                VARIANT="$2"
-                shift 2
-                ;;
             -h|--help)
                 HELP=true
                 shift
@@ -246,17 +232,6 @@ parse_args() {
         exit 1
     fi
 
-    # Validate and apply variant parameter
-    if [[ ! "$VARIANT" =~ ^(java|go)$ ]]; then
-        log_error "Invalid variant: $VARIANT. Must be one of: java, go"
-        exit 1
-    fi
-    if [[ "$VARIANT" == "go" ]]; then
-        BACKEND_DIR="$BACKEND_DIR_GO"
-    else
-        BACKEND_DIR="$BACKEND_DIR_JAVA"
-    fi
-
     # Validate conflicting options
     if [[ "$PUSH" == false && "$RESTART" == true && "$RELEASE_MODE" == false ]]; then
         log_warning "Cannot restart deployments without pushing images. Setting --no-restart."
@@ -268,9 +243,8 @@ parse_args() {
 check_prerequisites() {
     local tools=("docker" "kubectl")
 
-    # Add additional tools for release mode
     if [[ "$RELEASE_MODE" == true ]]; then
-        tools+=("mvn" "git")
+        tools+=("git")
     fi
 
     local missing_deps=()
@@ -313,17 +287,9 @@ check_prerequisites() {
 
 # Show current version
 show_versions() {
-    if [[ "$VARIANT" == "go" ]]; then
-        echo "Version: (Go variant — no Maven version)"
-    else
-        local backend_version
-        backend_version=$(mvn -q \
-            -Dexec.executable=echo \
-            -Dexec.args='${project.version}' \
-            --non-recursive exec:exec \
-            -f "$BACKEND_DIR/pom.xml")
-        echo "Version: $backend_version"
-    fi
+    local latest_tag
+    latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
+    echo "Latest tag: $latest_tag"
 }
 
 # Bump semantic version
@@ -478,7 +444,6 @@ restart_deployment() {
 execute_build() {
     # Display configuration
     echo -e "${BOLD}=== Build Configuration ===${RESET}"
-    echo "Variant:           $VARIANT"
     echo "Registries:        ${REGISTRIES[*]}"
     echo "Platform:          ${PLATFORM:-auto}"
     echo "Push to Registry:  $PUSH"
@@ -492,7 +457,7 @@ execute_build() {
     log_info "Starting build process..."
 
     # Build backend
-    build_image "backend ($VARIANT)" "$BACKEND_DIR" "${IMAGES[@]}"
+    build_image "backend" "$BACKEND_DIR" "${IMAGES[@]}"
 
     # Restart deployment if requested
     if [[ "$RESTART" == true ]]; then
@@ -507,10 +472,6 @@ execute_build() {
 
 # Execute release process
 execute_release() {
-    if [[ "$VARIANT" == "go" ]]; then
-        log_error "Release mode is only supported for the Java variant"
-        exit 1
-    fi
     log_info "Starting release process..."
 
     # Show current version
@@ -530,33 +491,22 @@ execute_release() {
         fi
     done
 
-    # Compute new version
-    current_version=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec -f "$BACKEND_DIR/pom.xml")
+    # Compute new version from latest git tag
+    local current_version
+    current_version=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+    current_version="${current_version#v}"
     new_version=$(bump_version "$current_version" "$bump")
     log_info "Releasing version $new_version..."
 
-    # Update backend to release version
-    log_info "Updating version to $new_version..."
-    mvn versions:set -DnewVersion="$new_version" -DgenerateBackupPoms=false -f "$BACKEND_DIR/pom.xml"
-
-    # Commit and tag release
-    log_info "Committing version changes and creating tag..."
-    git add "$BACKEND_DIR/pom.xml"
-    git commit -m "Release v$new_version"
+    # Tag release
+    log_info "Creating tag v$new_version..."
     git tag -a "v$new_version" -m "Release v$new_version"
 
-    # Build and upload after version commit
+    # Build and upload
     log_info "Building and uploading release version $new_version..."
     execute_build
 
-    # Bump backend to SNAPSHOT
-    log_info "Setting to SNAPSHOT version..."
-    snapshot="${new_version}-SNAPSHOT"
-    mvn versions:set -DnewVersion="$snapshot" -DgenerateBackupPoms=false -f "$BACKEND_DIR/pom.xml"
-    git add "$BACKEND_DIR/pom.xml"
-    git commit -m "Set version to $snapshot"
-
-    log_success "Release v$new_version complete. Version is now $snapshot."
+    log_success "Release v$new_version complete."
 }
 
 # Main execution function
