@@ -55,6 +55,7 @@ func (h *APIHandler) CreateContent(w http.ResponseWriter, r *http.Request) {
 	title := r.FormValue("title")
 	sourceURL := r.FormValue("sourceUrl")
 	creator := r.FormValue("creator")
+	allowExternalResources := r.FormValue("allowExternalResources") == "true"
 
 	file, header, err := r.FormFile("file")
 	if err != nil {
@@ -64,7 +65,7 @@ func (h *APIHandler) CreateContent(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 	data, _ := io.ReadAll(file)
 
-	resp, err := h.svc.Create(slug, data, header.Filename, user.Username, title, sourceURL, creator)
+	resp, err := h.svc.Create(slug, data, header.Filename, user.Username, title, sourceURL, creator, allowExternalResources)
 	if err != nil {
 		h.handleError(w, err)
 		return
@@ -96,8 +97,13 @@ func (h *APIHandler) UpdateContent(w http.ResponseWriter, r *http.Request) {
 	if v := r.FormValue("creator"); v != "" {
 		creator = &v
 	}
+	var allowExternalResources *bool
+	if v := r.FormValue("allowExternalResources"); v != "" {
+		b := v == "true"
+		allowExternalResources = &b
+	}
 
-	resp, err := h.svc.Update(slug, user.Username, fileData, fileName, title, sourceURL, creator)
+	resp, err := h.svc.Update(slug, user.Username, fileData, fileName, title, sourceURL, creator, allowExternalResources)
 	if err != nil {
 		h.handleError(w, err)
 		return

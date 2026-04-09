@@ -61,7 +61,7 @@ func (svc *ContentService) Get(slug, owner string) (*model.ContentResponse, erro
 	return &resp, nil
 }
 
-func (svc *ContentService) Create(slug string, fileData []byte, fileName string, owner, title, sourceURL, creator string) (*model.ContentResponse, error) {
+func (svc *ContentService) Create(slug string, fileData []byte, fileName string, owner, title, sourceURL, creator string, allowExternalResources bool) (*model.ContentResponse, error) {
 	if !slugPattern.MatchString(slug) {
 		return nil, ErrInvalidSlug
 	}
@@ -82,11 +82,12 @@ func (svc *ContentService) Create(slug string, fileData []byte, fileName string,
 	sourceURL = strings.TrimSpace(sourceURL)
 
 	c := &model.Content{
-		Slug:      slug,
-		Owner:     owner,
-		Title:     title,
-		SourceURL: sourceURL,
-		Creator:   creator,
+		Slug:                   slug,
+		Owner:                  owner,
+		Title:                  title,
+		SourceURL:              sourceURL,
+		Creator:                creator,
+		AllowExternalResources: allowExternalResources,
 	}
 	if err := svc.store.CreateContent(c); err != nil {
 		return nil, err
@@ -102,7 +103,7 @@ func (svc *ContentService) Create(slug string, fileData []byte, fileName string,
 	return &resp, nil
 }
 
-func (svc *ContentService) Update(slug, owner string, fileData []byte, fileName string, title, sourceURL, creator *string) (*model.ContentResponse, error) {
+func (svc *ContentService) Update(slug, owner string, fileData []byte, fileName string, title, sourceURL, creator *string, allowExternalResources *bool) (*model.ContentResponse, error) {
 	c, err := svc.store.GetContentBySlug(slug)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -122,6 +123,9 @@ func (svc *ContentService) Update(slug, owner string, fileData []byte, fileName 
 	}
 	if creator != nil {
 		c.Creator = strings.TrimSpace(*creator)
+	}
+	if allowExternalResources != nil {
+		c.AllowExternalResources = *allowExternalResources
 	}
 
 	if err := svc.store.UpdateContent(c); err != nil {

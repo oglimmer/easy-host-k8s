@@ -1,1 +1,0 @@
-ALTER TABLE content ADD COLUMN creator VARCHAR(255) NOT NULL DEFAULT 'admin';

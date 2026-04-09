@@ -44,6 +44,10 @@ func (h *ServingHandler) serveFile(w http.ResponseWriter, slug, filePath string)
 	}
 	w.Header().Set("Content-Type", f.ContentType)
 	w.Header().Set("Cache-Control", "public, max-age=3600")
-	w.Header().Set("Content-Security-Policy", "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; frame-ancestors 'none'")
+	if f.AllowExternalResources {
+		w.Header().Set("Content-Security-Policy", "default-src 'self' 'unsafe-inline' *; script-src 'self' 'unsafe-inline' *; style-src 'self' 'unsafe-inline' *; img-src 'self' data: *; font-src 'self' *; connect-src 'self' *; frame-ancestors 'none'")
+	} else {
+		w.Header().Set("Content-Security-Policy", "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; frame-ancestors 'none'")
+	}
 	w.Write(f.FileData)
 }

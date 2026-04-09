@@ -169,6 +169,7 @@ func (h *WebHandler) UploadSubmit(w http.ResponseWriter, r *http.Request) {
 	title := r.FormValue("title")
 	sourceURL := r.FormValue("sourceUrl")
 	creator := r.FormValue("creator")
+	allowExternalResources := r.FormValue("allowExternalResources") == "true"
 
 	file, header, err := r.FormFile("file")
 	if err != nil {
@@ -179,7 +180,7 @@ func (h *WebHandler) UploadSubmit(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 	data, _ := io.ReadAll(file)
 
-	_, err = h.svc.Create(slug, data, header.Filename, user.Username, title, sourceURL, creator)
+	_, err = h.svc.Create(slug, data, header.Filename, user.Username, title, sourceURL, creator, allowExternalResources)
 	if err != nil {
 		h.setFlash(w, r, "error", err.Error())
 		http.Redirect(w, r, "/upload", http.StatusFound)
@@ -211,6 +212,7 @@ func (h *WebHandler) EditSubmit(w http.ResponseWriter, r *http.Request) {
 	title := r.FormValue("title")
 	sourceURL := r.FormValue("sourceUrl")
 	creator := r.FormValue("creator")
+	allowExternal := r.FormValue("allowExternalResources") == "true"
 
 	var fileData []byte
 	var fileName string
@@ -221,7 +223,7 @@ func (h *WebHandler) EditSubmit(w http.ResponseWriter, r *http.Request) {
 		fileName = header.Filename
 	}
 
-	_, err = h.svc.Update(slug, user.Username, fileData, fileName, &title, &sourceURL, &creator)
+	_, err = h.svc.Update(slug, user.Username, fileData, fileName, &title, &sourceURL, &creator, &allowExternal)
 	if err != nil {
 		h.setFlash(w, r, "error", err.Error())
 		http.Redirect(w, r, "/edit/"+slug, http.StatusFound)

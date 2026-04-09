@@ -31,6 +31,14 @@
         </div>
 
         <div class="field">
+            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer">
+                <input type="checkbox" name="allowExternalResources" value="true">
+                Allow external resources
+            </label>
+            <small class="hint">Enable loading scripts, styles, and images from external URLs (e.g. CDNs).</small>
+        </div>
+
+        <div class="field">
             <label>File * <small style="text-transform:none;letter-spacing:0;font-weight:400">(HTML or ZIP, max 10MB)</small></label>
             <div class="dropzone" id="dropzone">
                 <input type="file" id="file" name="file" required accept=".html,.htm,.zip" class="dropzone-input">

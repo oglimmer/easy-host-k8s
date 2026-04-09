@@ -24,6 +24,14 @@
         </div>
 
         <div class="field">
+            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer">
+                <input type="checkbox" name="allowExternalResources" value="true" {{if .Content.AllowExternalResources}}checked{{end}}>
+                Allow external resources
+            </label>
+            <small class="hint">Enable loading scripts, styles, and images from external URLs (e.g. CDNs).</small>
+        </div>
+
+        <div class="field">
             <label>Current Files ({{len .Content.Files}})</label>
             <ul class="file-list">
                 {{range .Content.Files}}

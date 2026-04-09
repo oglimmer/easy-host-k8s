@@ -1,0 +1,1 @@
+ALTER TABLE content ADD COLUMN allow_external_resources BOOLEAN NOT NULL DEFAULT FALSE;
