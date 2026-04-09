@@ -1,5 +1,8 @@
 {{define "title"}}Developers{{end}}
 {{template "head" .}}
+{{if .User}}
+{{template "nav" .}}
+{{else}}
 <nav class="nav">
     <div class="nav-inner">
         <a href="/dashboard" class="nav-brand">easy-host</a>
@@ -8,6 +11,7 @@
         </div>
     </div>
 </nav>
+{{end}}
 <main class="container content-page">
     <h1>Developer Portal</h1>
     <p>Integrate with easy-host using the REST API. Upload, manage, and serve HTML content programmatically.</p>

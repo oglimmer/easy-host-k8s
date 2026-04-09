@@ -245,7 +245,13 @@ func (h *WebHandler) DeleteSubmit(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WebHandler) DevelopersPage(w http.ResponseWriter, r *http.Request) {
-	h.render(w, "developers.html", nil)
+	session, _ := h.sessions.Get(r, "session")
+	username, _ := session.Values["username"].(string)
+	data := map[string]interface{}{}
+	if username != "" {
+		data["User"] = username
+	}
+	h.render(w, "developers.html", data)
 }
 
 func (h *WebHandler) ImprintPage(w http.ResponseWriter, r *http.Request) {
