@@ -48,11 +48,11 @@ func NewWebHandler(svc *service.ContentService, users *auth.UserStore, sessionSt
 	}
 	tmpl := template.Must(template.New("").Funcs(funcMap).ParseGlob(filepath.Join(tmplDir, "*.html")))
 	return &WebHandler{
-		svc:         svc,
-		users:       users,
-		sessions:    sessionStore,
-		templates:   tmpl,
-		maxUpload:   maxUpload,
+		svc:          svc,
+		users:        users,
+		sessions:     sessionStore,
+		templates:    tmpl,
+		maxUpload:    maxUpload,
 		oidcEnabled:  oidcEnabled,
 		oidcLogout:   oidcLogout,
 		oidcClientID: oidcClientID,
@@ -85,8 +85,12 @@ func (h *WebHandler) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	session, _ := h.sessions.Get(r, "session")
 	session.Values["username"] = user.Username
+	dest := "/dashboard"
+	if redirect, ok := PopPostLoginRedirect(session); ok {
+		dest = redirect
+	}
 	session.Save(r, w)
-	http.Redirect(w, r, "/dashboard", http.StatusFound)
+	http.Redirect(w, r, dest, http.StatusFound)
 }
 
 func (h *WebHandler) Logout(w http.ResponseWriter, r *http.Request) {

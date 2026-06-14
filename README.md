@@ -52,6 +52,8 @@ Environment variables:
 | `APP_ADMIN_USERNAME` | Application admin username | `admin` |
 | `APP_ADMIN_PASSWORD` | Application admin password | `changeme` |
 | `SESSION_SECRET` | Cookie session secret | (default) |
+| `MCP_TOKEN_SECRET` | HMAC secret for signing MCP access tokens | `SESSION_SECRET` |
+| `BASE_URL` | Public base URL, used as the OAuth issuer / MCP resource | `http://localhost:$PORT` |
 | `PORT` | Server listen port | `8080` |
 
 ### Optional OIDC
@@ -62,6 +64,28 @@ Environment variables:
 | `OIDC_CLIENT_ID` | OIDC client ID |
 | `OIDC_CLIENT_SECRET` | OIDC client secret |
 | `OIDC_ALLOWED_USERS` | Comma-separated list of allowed OIDC users |
+
+## MCP server
+
+The backend exposes a [Model Context Protocol](https://modelcontextprotocol.io) endpoint at `/mcp`
+(Streamable HTTP transport) so AI clients can manage hosted content as tools. Tools:
+`list_content`, `get_content`, `create_content`, `update_content`, `delete_content` — each scoped to
+the authenticated owner, mirroring the REST API.
+
+easy-host is its own **OAuth 2.1 Authorization Server** for the endpoint, so MCP clients connect with
+no manual setup beyond the URL:
+
+- **Discovery** — `/.well-known/oauth-protected-resource` (RFC 9728) and
+  `/.well-known/oauth-authorization-server` (RFC 8414)
+- **Dynamic Client Registration** (RFC 7591) — `POST /oauth/register`
+- **Authorization Code + PKCE** (S256, required) — `GET /oauth/authorize`, `POST /oauth/token`
+
+The authorize step reuses the normal web login (form login or OIDC); an unauthenticated client is
+bounced through `/login` and resumed automatically. Access tokens are HMAC-signed JWTs (1h TTL, scope
+`mcp`, audience bound to `BASE_URL + /mcp`); refresh tokens are supported and rotated. Set `BASE_URL`
+to the public origin in production so the advertised issuer/resource URLs are correct.
+
+Point an MCP client at `${BASE_URL}/mcp` — e.g. `https://content.oglimmer.com/mcp`.
 
 ## Deployment
 

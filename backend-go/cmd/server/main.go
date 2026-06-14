@@ -18,6 +18,7 @@ import (
 	"github.com/oglimmer/easy-host/internal/auth"
 	"github.com/oglimmer/easy-host/internal/config"
 	"github.com/oglimmer/easy-host/internal/handler"
+	mcpserver "github.com/oglimmer/easy-host/internal/mcp"
 	"github.com/oglimmer/easy-host/internal/middleware"
 	"github.com/oglimmer/easy-host/internal/service"
 	"github.com/oglimmer/easy-host/internal/store"
@@ -78,6 +79,11 @@ func main() {
 	webHandler := handler.NewWebHandler(svc, users, sessionStore, tmplDir, cfg.MaxUploadSize, cfg.OIDCEnabled(), oidcLogout, cfg.OIDCClientID, baseURL)
 	healthHandler := handler.NewHealthHandler(db)
 
+	// MCP endpoint and its OAuth 2.1 authorization server (DCR + PKCE).
+	mcpOAuthSvc := service.NewMCPOAuthService(s, baseURL, cfg.MCPTokenSecret)
+	mcpOAuthHandler := handler.NewMCPOAuthHandler(mcpOAuthSvc, sessionStore)
+	mcpSrv := mcpserver.NewServer(svc, mcpOAuthSvc)
+
 	rateLimiter := middleware.NewRateLimiter()
 
 	r := chi.NewRouter()
@@ -106,6 +112,27 @@ func main() {
 	// Public serving
 	r.Get("/s/{slug}", servingHandler.ServeIndex)
 	r.Get("/s/{slug}/*", servingHandler.ServeFile)
+
+	// MCP endpoint and its OAuth 2.1 authorization server. Grouped under CORS so
+	// MCP clients can discover and connect cross-origin; the /mcp handler
+	// enforces its own bearer-token authentication.
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.CORS)
+
+		// OAuth metadata (RFC 9728 / RFC 8414).
+		r.Get("/.well-known/oauth-protected-resource", mcpOAuthHandler.ProtectedResourceMetadata)
+		r.Get("/.well-known/oauth-protected-resource/mcp", mcpOAuthHandler.ProtectedResourceMetadata)
+		r.Get("/.well-known/oauth-authorization-server", mcpOAuthHandler.AuthorizationServerMetadata)
+		r.Get("/.well-known/oauth-authorization-server/mcp", mcpOAuthHandler.AuthorizationServerMetadata)
+
+		// OAuth endpoints: dynamic client registration, authorize, token.
+		r.Post("/oauth/register", mcpOAuthHandler.Register)
+		r.Get("/oauth/authorize", mcpOAuthHandler.Authorize)
+		r.Post("/oauth/token", mcpOAuthHandler.Token)
+
+		// MCP Streamable HTTP transport (handles GET/POST/DELETE).
+		r.Handle("/mcp", mcpSrv.Handler())
+	})
 
 	// Health endpoint (public, used by K8s probes)
 	r.Get("/actuator/health", healthHandler.Health)

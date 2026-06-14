@@ -59,6 +59,24 @@ func SessionAuth(sessionStore *sessions.CookieStore) func(http.Handler) http.Han
 	}
 }
 
+// CORS allows cross-origin access to the MCP endpoint and its OAuth discovery /
+// flow endpoints, so MCP clients (which run in browsers or separate origins)
+// can discover and connect. The /mcp handler enforces its own bearer auth.
+func CORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, Mcp-Session-Id, MCP-Protocol-Version, Last-Event-ID")
+		w.Header().Set("Access-Control-Expose-Headers", "Mcp-Session-Id, WWW-Authenticate")
+		w.Header().Add("Vary", "Origin")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // SecurityHeaders adds common security headers.
 func SecurityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -114,7 +132,7 @@ func (rl *RateLimiter) cleanup() {
 }
 
 func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
-	excluded := []string{"/login", "/dashboard", "/upload", "/edit/", "/delete/", "/actuator", "/css/", "/js/", "/fonts/", "/"}
+	excluded := []string{"/login", "/dashboard", "/upload", "/edit/", "/delete/", "/actuator", "/css/", "/js/", "/fonts/", "/mcp", "/oauth/", "/.well-known/", "/"}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		for _, ex := range excluded {

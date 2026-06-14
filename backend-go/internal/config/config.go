@@ -8,11 +8,12 @@ import (
 type Config struct {
 	Port             string
 	DSN              string
-	ActuatorUsername  string
-	ActuatorPassword  string
-	AdminUsername     string
-	AdminPassword     string
+	ActuatorUsername string
+	ActuatorPassword string
+	AdminUsername    string
+	AdminPassword    string
 	SessionSecret    string
+	MCPTokenSecret   string
 	MaxUploadSize    int64
 	OIDCIssuerURL    string
 	OIDCClientID     string
@@ -36,11 +37,12 @@ func Load() *Config {
 	return &Config{
 		Port:             envOr("PORT", "8080"),
 		DSN:              buildDSN(),
-		ActuatorUsername:  envOr("ACTUATOR_USERNAME", "actuator"),
-		ActuatorPassword:  envOr("ACTUATOR_PASSWORD", "changeme"),
-		AdminUsername:     envOr("APP_ADMIN_USERNAME", "admin"),
-		AdminPassword:     envOr("APP_ADMIN_PASSWORD", "changeme"),
+		ActuatorUsername: envOr("ACTUATOR_USERNAME", "actuator"),
+		ActuatorPassword: envOr("ACTUATOR_PASSWORD", "changeme"),
+		AdminUsername:    envOr("APP_ADMIN_USERNAME", "admin"),
+		AdminPassword:    envOr("APP_ADMIN_PASSWORD", "changeme"),
 		SessionSecret:    envOr("SESSION_SECRET", "change-me-in-production-32bytes!"),
+		MCPTokenSecret:   envOr("MCP_TOKEN_SECRET", envOr("SESSION_SECRET", "change-me-in-production-32bytes!")),
 		MaxUploadSize:    10 << 20, // 10MB
 		OIDCIssuerURL:    os.Getenv("OIDC_ISSUER_URL"),
 		OIDCClientID:     os.Getenv("OIDC_CLIENT_ID"),

@@ -65,6 +65,13 @@ spec:
                 secretKeyRef:
                   name: {{ include "easy-host.fullname" . }}-app-secret
                   key: app-admin-password
+            # Signs web-session cookies and (via MCP_TOKEN_SECRET fallback) MCP
+            # OAuth access tokens. Must be a stable, secret value in production.
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "easy-host.fullname" . }}-app-secret
+                  key: session-secret
             - name: OIDC_ISSUER_URL
               value: {{ .Values.app.oidc.issuerUrl | quote }}
             - name: OIDC_CLIENT_ID

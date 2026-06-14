@@ -39,9 +39,10 @@ Go application using chi router, plain `database/sql` (no ORM), and `html/templa
 
 **Layer structure:**
 - `cmd/server/main.go` — entry point, wiring, route definitions, embedded SQL migrations
-- `internal/handler/` — HTTP handlers: `api.go` (REST CRUD), `web.go` (UI), `serving.go` (public file serving), `oidc.go` (optional OIDC auth), `health.go` (actuator)
-- `internal/service/` — business logic: validation, ZIP extraction, MIME detection
-- `internal/store/` — data access layer with raw SQL queries
+- `internal/handler/` — HTTP handlers: `api.go` (REST CRUD), `web.go` (UI), `serving.go` (public file serving), `oidc.go` (optional OIDC auth), `mcpoauth.go` (MCP OAuth 2.1 authorization server), `health.go` (actuator)
+- `internal/mcp/` — Model Context Protocol server (`/mcp`, Streamable HTTP via the official Go SDK) exposing content CRUD as tools
+- `internal/service/` — business logic: validation, ZIP extraction, MIME detection; `mcpoauth.go` (DCR, PKCE, token issuance/verification)
+- `internal/store/` — data access layer with raw SQL queries; `oauth.go` (OAuth client/code/refresh-token persistence)
 - `internal/model/` — data structures
 - `internal/middleware/` — request logging, security headers, rate limiting (10 req/sec per IP), BasicAuth, SessionAuth
 - `internal/auth/` — in-memory user store with bcrypt
@@ -55,6 +56,12 @@ Two auth mechanisms:
 
 Public serving at `/s/{slug}` requires no auth. Optional OIDC authentication via env vars.
 
+3. **MCP OAuth bearer**: `/mcp` is protected by OAuth 2.1 bearer tokens. easy-host acts as its own
+   Authorization Server with Dynamic Client Registration (RFC 7591), authorization-code + PKCE, and
+   metadata discovery (RFC 9728/8414). The authorize endpoint reuses the web session login. Access
+   tokens are HMAC-signed JWTs (scope `mcp`, audience = `BASE_URL + /mcp`); the user identity carried
+   is the owner username. Endpoints (`/oauth/*`, `/.well-known/*`, `/mcp`) sit under a CORS group.
+
 ### Content Lifecycle
 
 - Upload via REST (`POST /api/content`) or Web UI (`/upload`)
@@ -66,11 +73,12 @@ Public serving at `/s/{slug}` requires no auth. Optional OIDC authentication via
 
 - `content` — slug (unique, validated: `^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`), owner, timestamps
 - `content_file` — file_path, file_data (LONGBLOB), content_type; FK to content with cascade delete
+- `oauth_clients` / `oauth_auth_codes` / `oauth_refresh_tokens` — MCP OAuth state (dynamically registered clients, one-time PKCE auth codes, hashed refresh tokens); keyed by owner `username`, no FK to a users table
 - Migrations in `cmd/server/migrations/`, embedded via `//go:embed` and applied on startup with golang-migrate
 
 ### Configuration
 
-Environment-variable driven (12-factor). Key vars: `PORT`, `DATABASE_URL` (or `SPRING_DATASOURCE_URL`), `DB_HOST`/`DB_PORT`/`DB_NAME`, `SPRING_DATASOURCE_USERNAME`/`PASSWORD`, `APP_ADMIN_USERNAME`/`PASSWORD`, `ACTUATOR_USERNAME`/`PASSWORD`, `SESSION_SECRET`, `OIDC_ISSUER_URL`/`OIDC_CLIENT_ID`/`OIDC_CLIENT_SECRET`/`OIDC_ALLOWED_USERS`. 10MB upload limit.
+Environment-variable driven (12-factor). Key vars: `PORT`, `DATABASE_URL` (or `SPRING_DATASOURCE_URL`), `DB_HOST`/`DB_PORT`/`DB_NAME`, `SPRING_DATASOURCE_USERNAME`/`PASSWORD`, `APP_ADMIN_USERNAME`/`PASSWORD`, `ACTUATOR_USERNAME`/`PASSWORD`, `SESSION_SECRET`, `OIDC_ISSUER_URL`/`OIDC_CLIENT_ID`/`OIDC_CLIENT_SECRET`/`OIDC_ALLOWED_USERS`, `BASE_URL` (OAuth issuer / MCP resource), `MCP_TOKEN_SECRET` (MCP access-token signing key; defaults to `SESSION_SECRET`). 10MB upload limit.
 
 ## CI/CD
 

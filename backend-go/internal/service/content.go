@@ -15,11 +15,11 @@ import (
 )
 
 var (
-	ErrNotFound         = errors.New("content not found")
-	ErrSlugExists       = errors.New("slug already exists")
-	ErrInvalidSlug      = errors.New("invalid slug format")
-	ErrInvalidFilePath  = errors.New("invalid file path")
-	ErrForbidden        = errors.New("not owner of content")
+	ErrNotFound        = errors.New("content not found")
+	ErrSlugExists      = errors.New("slug already exists")
+	ErrInvalidSlug     = errors.New("invalid slug format")
+	ErrInvalidFilePath = errors.New("invalid file path")
+	ErrForbidden       = errors.New("not owner of content")
 
 	slugPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`)
 )

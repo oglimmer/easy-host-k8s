@@ -115,9 +115,13 @@ func (h *OIDCHandler) Callback(w http.ResponseWriter, r *http.Request) {
 	// Use issuer+subject as username (same as Java version)
 	username := idToken.Issuer + "|" + claims.Sub
 	session.Values["username"] = username
+	dest := "/dashboard"
+	if redirect, ok := PopPostLoginRedirect(session); ok {
+		dest = redirect
+	}
 	session.Save(r, w)
 
-	http.Redirect(w, r, "/dashboard", http.StatusFound)
+	http.Redirect(w, r, dest, http.StatusFound)
 }
 
 func (h *OIDCHandler) LogoutURL() string {

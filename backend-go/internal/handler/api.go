@@ -13,8 +13,8 @@ import (
 )
 
 type APIHandler struct {
-	svc         *service.ContentService
-	maxUpload   int64
+	svc       *service.ContentService
+	maxUpload int64
 }
 
 func NewAPIHandler(svc *service.ContentService, maxUpload int64) *APIHandler {
