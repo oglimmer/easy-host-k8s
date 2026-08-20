@@ -95,6 +95,7 @@ type createContentInput struct {
 	AllowExternalResources bool   `json:"allow_external_resources,omitempty" jsonschema:"Whether the page may load external (cross-origin) resources."`
 	HTML                   string `json:"html,omitempty" jsonschema:"Raw HTML stored as index.html. Provide either html or zip_base64."`
 	ZipBase64              string `json:"zip_base64,omitempty" jsonschema:"Base64-encoded ZIP archive of a multi-file site, extracted preserving structure. Provide either html or zip_base64."`
+	Passphrase             string `json:"passphrase,omitempty" jsonschema:"Optional passphrase. When set, the files are encrypted at rest and visitors of /s/{slug} must enter this passphrase to view them. It is never stored and cannot be recovered if lost."`
 }
 
 type updateContentInput struct {
@@ -105,6 +106,9 @@ type updateContentInput struct {
 	AllowExternalResources *bool   `json:"allow_external_resources,omitempty" jsonschema:"New external-resources flag. Omit to leave unchanged."`
 	HTML                   string  `json:"html,omitempty" jsonschema:"Replacement HTML stored as index.html. Omit to leave files unchanged."`
 	ZipBase64              string  `json:"zip_base64,omitempty" jsonschema:"Replacement site as a base64-encoded ZIP archive. Omit to leave files unchanged."`
+	Passphrase             string  `json:"passphrase,omitempty" jsonschema:"For already-encrypted content, its current passphrase; required to replace files, rotate the passphrase, or remove encryption. For unencrypted content, a passphrase to encrypt it with."`
+	NewPassphrase          string  `json:"new_passphrase,omitempty" jsonschema:"Rotate an encrypted entry to this passphrase. Requires passphrase. The files themselves are not rewritten."`
+	RemoveEncryption       bool    `json:"remove_encryption,omitempty" jsonschema:"Decrypt the entry back to public, unencrypted storage. Requires passphrase."`
 }
 
 func (s *Server) registerTools(server *sdk.Server) {
@@ -120,12 +124,12 @@ func (s *Server) registerTools(server *sdk.Server) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:        "create_content",
-		Description: "Create a new content entry served at /s/{slug}. Provide the site body either as raw HTML (stored as index.html) or as a base64-encoded ZIP archive.",
+		Description: "Create a new content entry served at /s/{slug}. Provide the site body either as raw HTML (stored as index.html) or as a base64-encoded ZIP archive. Set passphrase to encrypt the files at rest, which makes visitors enter that passphrase before the page is served.",
 	}, s.createContent)
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:        "update_content",
-		Description: "Update one of the authenticated owner's content entries by slug. Only supplied metadata fields are changed; supply html or zip_base64 to replace the files.",
+		Description: "Update one of the authenticated owner's content entries by slug. Only supplied metadata fields are changed; supply html or zip_base64 to replace the files. Encrypted entries need their passphrase to have files replaced, and support rotating (new_passphrase) or lifting (remove_encryption) their protection.",
 	}, s.updateContent)
 
 	sdk.AddTool(server, &sdk.Tool{
@@ -173,7 +177,17 @@ func (s *Server) createContent(_ context.Context, req *sdk.CallToolRequest, in c
 	if err != nil {
 		return errorResult(err), nil, nil
 	}
-	resp, err := s.contentSvc.Create(in.Slug, data, fileName, user, in.Title, in.SourceURL, in.Creator, in.AllowExternalResources)
+	resp, err := s.contentSvc.Create(service.CreateParams{
+		Slug:                   in.Slug,
+		Owner:                  user,
+		Title:                  in.Title,
+		SourceURL:              in.SourceURL,
+		Creator:                in.Creator,
+		AllowExternalResources: in.AllowExternalResources,
+		FileData:               data,
+		FileName:               fileName,
+		Passphrase:             in.Passphrase,
+	})
 	if err != nil {
 		return errorResult(err), nil, nil
 	}
@@ -198,7 +212,19 @@ func (s *Server) updateContent(_ context.Context, req *sdk.CallToolRequest, in u
 		}
 	}
 
-	resp, err := s.contentSvc.Update(in.Slug, user, data, fileName, in.Title, in.SourceURL, in.Creator, in.AllowExternalResources)
+	resp, err := s.contentSvc.Update(service.UpdateParams{
+		Slug:                   in.Slug,
+		Owner:                  user,
+		Title:                  in.Title,
+		SourceURL:              in.SourceURL,
+		Creator:                in.Creator,
+		AllowExternalResources: in.AllowExternalResources,
+		FileData:               data,
+		FileName:               fileName,
+		Passphrase:             in.Passphrase,
+		NewPassphrase:          in.NewPassphrase,
+		RemoveEncryption:       in.RemoveEncryption,
+	})
 	if err != nil {
 		return errorResult(err), nil, nil
 	}

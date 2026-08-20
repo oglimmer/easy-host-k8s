@@ -41,6 +41,7 @@ Go application using chi router, plain `database/sql` (no ORM), and `html/templa
 - `cmd/server/main.go` — entry point, wiring, route definitions, embedded SQL migrations
 - `internal/handler/` — HTTP handlers: `api.go` (REST CRUD), `web.go` (UI), `serving.go` (public file serving), `oidc.go` (optional OIDC auth), `mcpoauth.go` (MCP OAuth 2.1 authorization server), `health.go` (actuator)
 - `internal/mcp/` — Model Context Protocol server (`/mcp`, Streamable HTTP via the official Go SDK) exposing content CRUD as tools
+- `internal/crypto/` — at-rest encryption for passphrase-protected content: Argon2id KDF, XChaCha20-Poly1305 envelope encryption, and the sealed unlock tokens visitors carry in a cookie
 - `internal/service/` — business logic: validation, ZIP extraction, MIME detection; `mcpoauth.go` (DCR, PKCE, token issuance/verification)
 - `internal/store/` — data access layer with raw SQL queries; `oauth.go` (OAuth client/code/refresh-token persistence)
 - `internal/model/` — data structures
@@ -61,6 +62,10 @@ Public serving at `/s/{slug}` requires no auth. Optional OIDC authentication via
    metadata discovery (RFC 9728/8414). The authorize endpoint reuses the web session login. Access
    tokens are HMAC-signed JWTs (scope `mcp`, audience = `BASE_URL + /mcp`); the user identity carried
    is the owner username. Endpoints (`/oauth/*`, `/.well-known/*`, `/mcp`) sit under a CORS group.
+4. **Passphrase unlock**: encrypted content served from `/s/{slug}` needs no account, but answers 401
+   with a passphrase prompt until the visitor posts the passphrase to `/unlock/{slug}`; the resulting
+   sealed cookie (path-scoped to `/s/{slug}`, TTL `UNLOCK_TTL`) carries the data key for later
+   requests.
 
 ### Content Lifecycle
 
@@ -68,17 +73,24 @@ Public serving at `/s/{slug}` requires no auth. Optional OIDC authentication via
 - Single file → stored as `index.html`; ZIP → extracted preserving structure (filters `__MACOSX`, hidden files)
 - Files stored as `LONGBLOB` in `content_file` table, linked to `content` via FK
 - Served publicly at `/s/{slug}` with content-type detection and cache headers
+- Optional at-rest encryption: a passphrase at upload derives an Argon2id key that wraps a random
+  per-content data key; files are sealed with XChaCha20-Poly1305, bound by AAD to their slug and file
+  path. Only the wrapped key is stored, so a lost passphrase means lost content. Encryption can be
+  added, rotated (rekeys, invalidating open sessions), or removed on update; replacing the files of an
+  encrypted entry requires the current passphrase. Encrypted responses are `no-store`/`noindex`.
 
 ### Data Model
 
-- `content` — slug (unique, validated: `^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`), owner, timestamps
-- `content_file` — file_path, file_data (LONGBLOB), content_type; FK to content with cascade delete
+- `content` — slug (unique, validated: `^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`), owner, timestamps, and the
+  encryption envelope (`enc_kdf`, `enc_salt`, `enc_wrapped_key`; all NULL when unencrypted)
+- `content_file` — file_path, file_data (LONGBLOB, `nonce || ciphertext || tag` when the content is
+  encrypted), content_type; FK to content with cascade delete
 - `oauth_clients` / `oauth_auth_codes` / `oauth_refresh_tokens` — MCP OAuth state (dynamically registered clients, one-time PKCE auth codes, hashed refresh tokens); keyed by owner `username`, no FK to a users table
 - Migrations in `cmd/server/migrations/`, embedded via `//go:embed` and applied on startup with golang-migrate
 
 ### Configuration
 
-Environment-variable driven (12-factor). Key vars: `PORT`, `DATABASE_URL` (or `SPRING_DATASOURCE_URL`), `DB_HOST`/`DB_PORT`/`DB_NAME`, `SPRING_DATASOURCE_USERNAME`/`PASSWORD`, `APP_ADMIN_USERNAME`/`PASSWORD`, `ACTUATOR_USERNAME`/`PASSWORD`, `SESSION_SECRET`, `OIDC_ISSUER_URL`/`OIDC_CLIENT_ID`/`OIDC_CLIENT_SECRET`/`OIDC_ALLOWED_USERS`, `BASE_URL` (OAuth issuer / MCP resource), `MCP_TOKEN_SECRET` (MCP access-token signing key; defaults to `SESSION_SECRET`). 10MB upload limit.
+Environment-variable driven (12-factor). Key vars: `PORT`, `DATABASE_URL` (or `SPRING_DATASOURCE_URL`), `DB_HOST`/`DB_PORT`/`DB_NAME`, `SPRING_DATASOURCE_USERNAME`/`PASSWORD`, `APP_ADMIN_USERNAME`/`PASSWORD`, `ACTUATOR_USERNAME`/`PASSWORD`, `SESSION_SECRET`, `OIDC_ISSUER_URL`/`OIDC_CLIENT_ID`/`OIDC_CLIENT_SECRET`/`OIDC_ALLOWED_USERS`, `BASE_URL` (OAuth issuer / MCP resource), `MCP_TOKEN_SECRET` (MCP access-token signing key; defaults to `SESSION_SECRET`), `UNLOCK_TOKEN_SECRET` (seals unlock cookies; defaults to `SESSION_SECRET`), `UNLOCK_TTL` (Go duration, default `12h`). 10MB upload limit.
 
 ## CI/CD
 

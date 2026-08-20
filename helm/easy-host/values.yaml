@@ -54,6 +54,10 @@ app:
   actuator:
     username: actuator
     password: changeme
+  encryption:
+    # Passphrase-protected content: how long one passphrase entry keeps the
+    # content viewable before a visitor is asked again (Go duration).
+    unlockTtl: 12h
   oidc:
     # Secret name containing keys: client-id, client-secret
     secretName: easy-host-oidc-secret

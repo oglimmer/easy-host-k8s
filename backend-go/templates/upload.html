@@ -6,6 +6,8 @@
         <h1>Upload Content</h1>
     </div>
 
+    {{if .Error}}<div class="flash flash-error">{{.Error}}</div>{{end}}
+
     <form method="post" action="/upload" enctype="multipart/form-data" class="form-card">
         <div class="field">
             <label for="slug">Slug *</label>
@@ -36,6 +38,19 @@
                 Allow external resources
             </label>
             <small class="hint">Enable loading scripts, styles, and images from external URLs (e.g. CDNs).</small>
+        </div>
+
+        <div class="field">
+            <label for="passphrase">Passphrase</label>
+            <input type="password" id="passphrase" name="passphrase" autocomplete="new-password"
+                   placeholder="Leave empty to publish openly" oninput="togglePassphraseConfirm()">
+            <small class="hint">Optional. Encrypts the files at rest with XChaCha20-Poly1305; visitors must enter it to view the page. It is never stored &mdash; if you lose it, the content cannot be recovered.</small>
+        </div>
+
+        <div class="field" id="passphraseConfirmField" style="display:none">
+            <label for="passphraseConfirm">Confirm passphrase</label>
+            <input type="password" id="passphraseConfirm" name="passphraseConfirm" autocomplete="new-password"
+                   placeholder="Repeat the passphrase">
         </div>
 
         <div class="field">
@@ -88,6 +103,15 @@
 <script>
 function updatePreview(v) {
     document.getElementById('slugValue').textContent = v || '...';
+}
+function togglePassphraseConfirm() {
+    var pass = document.getElementById('passphrase');
+    var field = document.getElementById('passphraseConfirmField');
+    var confirm = document.getElementById('passphraseConfirm');
+    var wanted = pass.value.length > 0;
+    field.style.display = wanted ? '' : 'none';
+    confirm.required = wanted;
+    if (!wanted) confirm.value = '';
 }
 initDropzone('dropzone', 'file', true);
 </script>

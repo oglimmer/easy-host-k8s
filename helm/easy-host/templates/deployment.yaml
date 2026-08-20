@@ -65,13 +65,18 @@ spec:
                 secretKeyRef:
                   name: {{ include "easy-host.fullname" . }}-app-secret
                   key: app-admin-password
-            # Signs web-session cookies and (via MCP_TOKEN_SECRET fallback) MCP
-            # OAuth access tokens. Must be a stable, secret value in production.
+            # Signs web-session cookies and, via their fallbacks, MCP OAuth access
+            # tokens (MCP_TOKEN_SECRET) and the unlock cookies of encrypted
+            # content (UNLOCK_TOKEN_SECRET) — so every replica accepts the same
+            # cookies and tokens. Must be a stable, secret value in production.
             - name: SESSION_SECRET
               valueFrom:
                 secretKeyRef:
                   name: {{ include "easy-host.fullname" . }}-app-secret
                   key: session-secret
+            # How long one passphrase entry keeps encrypted content viewable.
+            - name: UNLOCK_TTL
+              value: {{ .Values.app.encryption.unlockTtl | quote }}
             - name: OIDC_ISSUER_URL
               value: {{ .Values.app.oidc.issuerUrl | quote }}
             - name: OIDC_CLIENT_ID

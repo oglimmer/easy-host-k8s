@@ -3,9 +3,11 @@
 {{template "nav" .}}
 <main class="container">
     <div class="page-header">
-        <h1>Edit: {{.Content.Slug}}</h1>
+        <h1>Edit: {{.Content.Slug}} {{if .Content.Encrypted}}<span class="badge badge-lock" title="Encrypted at rest">&#128274; Encrypted</span>{{end}}</h1>
         <a href="/s/{{.Content.Slug}}" target="_blank" class="btn">View Live</a>
     </div>
+
+    {{if .Error}}<div class="flash flash-error">{{.Error}}</div>{{end}}
 
     <form method="post" action="/edit/{{.Content.Slug}}" enctype="multipart/form-data" class="form-card">
         <div class="field">
@@ -30,6 +32,47 @@
             </label>
             <small class="hint">Enable loading scripts, styles, and images from external URLs (e.g. CDNs).</small>
         </div>
+
+        {{if .Content.Encrypted}}
+        <fieldset class="field-group">
+            <legend>Encryption</legend>
+            <p class="hint">The files are encrypted at rest and visitors must enter the passphrase to view them.</p>
+
+            <div class="field">
+                <label for="passphrase">Current passphrase</label>
+                <input type="password" id="passphrase" name="passphrase" autocomplete="off"
+                       placeholder="Needed to replace files, or to change this section">
+                <small class="hint">Only required when you replace the files below, rotate the passphrase, or turn encryption off. Editing the fields above works without it.</small>
+            </div>
+
+            <div class="field">
+                <label for="newPassphrase">New passphrase</label>
+                <input type="password" id="newPassphrase" name="newPassphrase" autocomplete="new-password"
+                       placeholder="Leave empty to keep the current one" oninput="toggleNewPassphraseConfirm()">
+            </div>
+
+            <div class="field" id="newPassphraseConfirmField" style="display:none">
+                <label for="newPassphraseConfirm">Confirm new passphrase</label>
+                <input type="password" id="newPassphraseConfirm" name="newPassphraseConfirm" autocomplete="new-password"
+                       placeholder="Repeat the new passphrase">
+            </div>
+
+            <div class="field">
+                <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer">
+                    <input type="checkbox" name="removeEncryption" value="true">
+                    Turn off encryption
+                </label>
+                <small class="hint">Decrypts the files at rest and makes the page publicly readable again.</small>
+            </div>
+        </fieldset>
+        {{else}}
+        <div class="field">
+            <label for="passphrase">Passphrase</label>
+            <input type="password" id="passphrase" name="passphrase" autocomplete="new-password"
+                   placeholder="Leave empty to keep this page open">
+            <small class="hint">Setting a passphrase encrypts the files at rest; visitors must enter it to view the page. It is never stored &mdash; if you lose it, the content cannot be recovered.</small>
+        </div>
+        {{end}}
 
         <div class="field">
             <label>Current Files ({{len .Content.Files}})</label>
@@ -88,6 +131,14 @@
 </main>
 
 <script>
+function toggleNewPassphraseConfirm() {
+    var field = document.getElementById('newPassphraseConfirmField');
+    var confirm = document.getElementById('newPassphraseConfirm');
+    var wanted = document.getElementById('newPassphrase').value.length > 0;
+    field.style.display = wanted ? '' : 'none';
+    confirm.required = wanted;
+    if (!wanted) confirm.value = '';
+}
 initDropzone('dropzone', 'file', false);
 </script>
 {{template "footer" .}}

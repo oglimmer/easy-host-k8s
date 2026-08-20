@@ -42,7 +42,10 @@
             {{range .Items}}
             <tr data-slug="{{.Slug}}">
                 <td>{{.Title}}</td>
-                <td><a href="/s/{{.Slug}}" target="_blank" onclick="event.stopPropagation()">/s/{{.Slug}}</a></td>
+                <td>
+                    <a href="/s/{{.Slug}}" target="_blank" onclick="event.stopPropagation()">/s/{{.Slug}}</a>
+                    {{if .Encrypted}}<span class="badge badge-lock" title="Encrypted &mdash; visitors need the passphrase">&#128274;</span>{{end}}
+                </td>
                 <td>{{.Creator}}</td>
                 <td>{{.UpdatedAt.Format "2006-01-02 15:04"}}</td>
             </tr>

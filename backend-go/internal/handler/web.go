@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"html/template"
 	"io"
 	"log"
@@ -158,7 +159,12 @@ func (h *WebHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 
 func (h *WebHandler) UploadPage(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r)
-	h.render(w, "upload.html", map[string]interface{}{"User": user.Username})
+	session, _ := h.sessions.Get(r, "session")
+	flash := getFlash(session, r, w)
+	h.render(w, "upload.html", map[string]interface{}{
+		"User":  user.Username,
+		"Error": flash["error"],
+	})
 }
 
 func (h *WebHandler) UploadSubmit(w http.ResponseWriter, r *http.Request) {
@@ -170,10 +176,12 @@ func (h *WebHandler) UploadSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	slug := r.FormValue("slug")
-	title := r.FormValue("title")
-	sourceURL := r.FormValue("sourceUrl")
-	creator := r.FormValue("creator")
-	allowExternalResources := r.FormValue("allowExternalResources") == "true"
+	passphrase := r.FormValue("passphrase")
+	if passphrase != r.FormValue("passphraseConfirm") {
+		h.setFlash(w, r, "error", "The two passphrases do not match")
+		http.Redirect(w, r, "/upload", http.StatusFound)
+		return
+	}
 
 	file, header, err := r.FormFile("file")
 	if err != nil {
@@ -184,13 +192,27 @@ func (h *WebHandler) UploadSubmit(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 	data, _ := io.ReadAll(file)
 
-	_, err = h.svc.Create(slug, data, header.Filename, user.Username, title, sourceURL, creator, allowExternalResources)
+	_, err = h.svc.Create(service.CreateParams{
+		Slug:                   slug,
+		Owner:                  user.Username,
+		Title:                  r.FormValue("title"),
+		SourceURL:              r.FormValue("sourceUrl"),
+		Creator:                r.FormValue("creator"),
+		AllowExternalResources: r.FormValue("allowExternalResources") == "true",
+		FileData:               data,
+		FileName:               header.Filename,
+		Passphrase:             passphrase,
+	})
 	if err != nil {
-		h.setFlash(w, r, "error", err.Error())
+		h.setFlash(w, r, "error", errorMessage(err))
 		http.Redirect(w, r, "/upload", http.StatusFound)
 		return
 	}
-	h.setFlash(w, r, "success", "Content '"+slug+"' uploaded successfully")
+	msg := "Content '" + slug + "' uploaded successfully"
+	if passphrase != "" {
+		msg += " and encrypted"
+	}
+	h.setFlash(w, r, "success", msg)
 	http.Redirect(w, r, "/dashboard", http.StatusFound)
 }
 
@@ -202,9 +224,12 @@ func (h *WebHandler) EditPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
+	session, _ := h.sessions.Get(r, "session")
+	flash := getFlash(session, r, w)
 	h.render(w, "edit.html", map[string]interface{}{
 		"User":    user.Username,
 		"Content": content,
+		"Error":   flash["error"],
 	})
 }
 
@@ -217,6 +242,19 @@ func (h *WebHandler) EditSubmit(w http.ResponseWriter, r *http.Request) {
 	sourceURL := r.FormValue("sourceUrl")
 	creator := r.FormValue("creator")
 	allowExternal := r.FormValue("allowExternalResources") == "true"
+	newPassphrase := r.FormValue("newPassphrase")
+	if newPassphrase != r.FormValue("newPassphraseConfirm") {
+		h.setFlash(w, r, "error", "The two new passphrases do not match")
+		http.Redirect(w, r, "/edit/"+slug, http.StatusFound)
+		return
+	}
+	removeEncryption := r.FormValue("removeEncryption") == "true"
+	// One field carries the passphrase in both directions: for public content it
+	// is the passphrase to encrypt with, for encrypted content the current one.
+	passphrase := r.FormValue("passphrase")
+	if removeEncryption {
+		newPassphrase = ""
+	}
 
 	var fileData []byte
 	var fileName string
@@ -227,9 +265,21 @@ func (h *WebHandler) EditSubmit(w http.ResponseWriter, r *http.Request) {
 		fileName = header.Filename
 	}
 
-	_, err = h.svc.Update(slug, user.Username, fileData, fileName, &title, &sourceURL, &creator, &allowExternal)
+	_, err = h.svc.Update(service.UpdateParams{
+		Slug:                   slug,
+		Owner:                  user.Username,
+		Title:                  &title,
+		SourceURL:              &sourceURL,
+		Creator:                &creator,
+		AllowExternalResources: &allowExternal,
+		FileData:               fileData,
+		FileName:               fileName,
+		Passphrase:             passphrase,
+		NewPassphrase:          newPassphrase,
+		RemoveEncryption:       removeEncryption,
+	})
 	if err != nil {
-		h.setFlash(w, r, "error", err.Error())
+		h.setFlash(w, r, "error", errorMessage(err))
 		http.Redirect(w, r, "/edit/"+slug, http.StatusFound)
 		return
 	}
@@ -268,6 +318,39 @@ func (h *WebHandler) PrivacyPage(w http.ResponseWriter, r *http.Request) {
 
 func (h *WebHandler) TermsPage(w http.ResponseWriter, r *http.Request) {
 	h.render(w, "terms.html", nil)
+}
+
+// RenderUnlock draws the passphrase prompt a visitor sees when they open
+// encrypted content. It implements UnlockPrompt for the serving handler, which
+// has no template set of its own.
+func (h *WebHandler) RenderUnlock(w http.ResponseWriter, status int, data UnlockPromptData) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
+	if err := h.templates.ExecuteTemplate(w, "unlock.html", data); err != nil {
+		log.Printf("template error: %v", err)
+	}
+}
+
+// errorMessage turns a service error into something worth showing an owner,
+// without leaking internals for the unexpected ones.
+func errorMessage(err error) string {
+	switch {
+	case errors.Is(err, service.ErrSlugExists):
+		return "That slug is already taken"
+	case errors.Is(err, service.ErrInvalidSlug):
+		return "Invalid slug format"
+	case errors.Is(err, service.ErrPassphraseRequired):
+		return "This content is encrypted: enter its current passphrase"
+	case errors.Is(err, service.ErrWrongPassphrase):
+		return "Wrong passphrase"
+	case errors.Is(err, service.ErrNotEncrypted):
+		return "This content is not encrypted"
+	case errors.Is(err, service.ErrNotFound):
+		return "Content not found"
+	default:
+		log.Printf("web error: %v", err)
+		return "Something went wrong, please try again"
+	}
 }
 
 func (h *WebHandler) render(w http.ResponseWriter, name string, data interface{}) {

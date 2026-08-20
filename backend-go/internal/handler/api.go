@@ -51,12 +51,6 @@ func (h *APIHandler) CreateContent(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "File too large", http.StatusBadRequest)
 		return
 	}
-	slug := r.FormValue("slug")
-	title := r.FormValue("title")
-	sourceURL := r.FormValue("sourceUrl")
-	creator := r.FormValue("creator")
-	allowExternalResources := r.FormValue("allowExternalResources") == "true"
-
 	file, header, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "File required", http.StatusBadRequest)
@@ -65,7 +59,17 @@ func (h *APIHandler) CreateContent(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 	data, _ := io.ReadAll(file)
 
-	resp, err := h.svc.Create(slug, data, header.Filename, user.Username, title, sourceURL, creator, allowExternalResources)
+	resp, err := h.svc.Create(service.CreateParams{
+		Slug:                   r.FormValue("slug"),
+		Owner:                  user.Username,
+		Title:                  r.FormValue("title"),
+		SourceURL:              r.FormValue("sourceUrl"),
+		Creator:                r.FormValue("creator"),
+		AllowExternalResources: r.FormValue("allowExternalResources") == "true",
+		FileData:               data,
+		FileName:               header.Filename,
+		Passphrase:             r.FormValue("passphrase"),
+	})
 	if err != nil {
 		h.handleError(w, err)
 		return
@@ -103,7 +107,19 @@ func (h *APIHandler) UpdateContent(w http.ResponseWriter, r *http.Request) {
 		allowExternalResources = &b
 	}
 
-	resp, err := h.svc.Update(slug, user.Username, fileData, fileName, title, sourceURL, creator, allowExternalResources)
+	resp, err := h.svc.Update(service.UpdateParams{
+		Slug:                   slug,
+		Owner:                  user.Username,
+		Title:                  title,
+		SourceURL:              sourceURL,
+		Creator:                creator,
+		AllowExternalResources: allowExternalResources,
+		FileData:               fileData,
+		FileName:               fileName,
+		Passphrase:             r.FormValue("passphrase"),
+		NewPassphrase:          r.FormValue("newPassphrase"),
+		RemoveEncryption:       r.FormValue("removeEncryption") == "true",
+	})
 	if err != nil {
 		h.handleError(w, err)
 		return
@@ -129,6 +145,12 @@ func (h *APIHandler) handleError(w http.ResponseWriter, err error) {
 		writeJSON(w, http.StatusConflict, map[string]string{"error": "Slug already exists"})
 	case errors.Is(err, service.ErrInvalidSlug):
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid slug format"})
+	case errors.Is(err, service.ErrPassphraseRequired):
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "This content is encrypted: send its passphrase"})
+	case errors.Is(err, service.ErrWrongPassphrase):
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "Wrong passphrase"})
+	case errors.Is(err, service.ErrNotEncrypted):
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "This content is not encrypted"})
 	default:
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 	}

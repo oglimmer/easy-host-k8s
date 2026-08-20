@@ -80,6 +80,7 @@ open https://content.oglimmer.com/s/hello</code></pre>
             <tr><td><code>sourceUrl</code></td><td>string</td><td>No</td><td>Reference URL for the original source</td></tr>
             <tr><td><code>creator</code></td><td>string</td><td>No</td><td>Name of the content creator</td></tr>
             <tr><td><code>allowExternalResources</code></td><td>string</td><td>No</td><td><code>"true"</code> or <code>"false"</code> &mdash; allow loading external resources</td></tr>
+            <tr><td><code>passphrase</code></td><td>string</td><td>No</td><td>Encrypt the files at rest; visitors must enter it to view the page. Never stored &mdash; unrecoverable if lost</td></tr>
         </tbody>
     </table>
     </div>
@@ -138,6 +139,9 @@ open https://content.oglimmer.com/s/hello</code></pre>
             <tr><td><code>sourceUrl</code></td><td>string</td><td>Updated source URL</td></tr>
             <tr><td><code>creator</code></td><td>string</td><td>Updated creator name</td></tr>
             <tr><td><code>allowExternalResources</code></td><td>string</td><td><code>"true"</code> or <code>"false"</code></td></tr>
+            <tr><td><code>passphrase</code></td><td>string</td><td>For encrypted content, its current passphrase &mdash; required to replace files, rotate, or remove encryption. For unencrypted content, a passphrase to encrypt it with</td></tr>
+            <tr><td><code>newPassphrase</code></td><td>string</td><td>Rotate to this passphrase (requires <code>passphrase</code>). Re-encrypts with a fresh key, so already-unlocked visitors lose access</td></tr>
+            <tr><td><code>removeEncryption</code></td><td>string</td><td><code>"true"</code> decrypts the content back to public storage (requires <code>passphrase</code>)</td></tr>
         </tbody>
     </table>
     </div>
@@ -150,7 +154,8 @@ open https://content.oglimmer.com/s/hello</code></pre>
     <p><strong>Response:</strong> <code>200 OK</code> &mdash; Returns the updated content object.</p>
     <p><strong>Error responses:</strong></p>
     <ul>
-        <li><code>400 Bad Request</code> &mdash; Invalid slug format</li>
+        <li><code>400 Bad Request</code> &mdash; Invalid slug format, or a passphrase is required but missing</li>
+        <li><code>403 Forbidden</code> &mdash; Wrong passphrase</li>
         <li><code>404 Not Found</code> &mdash; No content with that slug</li>
     </ul>
 
@@ -181,6 +186,7 @@ open https://content.oglimmer.com/s/hello</code></pre>
             <tr><td><code>owner</code></td><td>string</td><td>Username of the content owner</td></tr>
             <tr><td><code>creator</code></td><td>string</td><td>Creator name</td></tr>
             <tr><td><code>allowExternalResources</code></td><td>boolean</td><td>Whether external resource loading is allowed</td></tr>
+            <tr><td><code>encrypted</code></td><td>boolean</td><td>Whether the files are encrypted at rest and need a passphrase to view</td></tr>
             <tr><td><code>createdAt</code></td><td>string</td><td>ISO 8601 timestamp</td></tr>
             <tr><td><code>updatedAt</code></td><td>string</td><td>ISO 8601 timestamp</td></tr>
             <tr><td><code>files</code></td><td>array</td><td>List of file paths in this content</td></tr>
@@ -196,8 +202,59 @@ https://content.oglimmer.com/s/{slug}/{path}</code></pre>
         <li>The base URL (<code>/s/{slug}</code>) serves <code>index.html</code></li>
         <li>Sub-paths resolve to files within the uploaded content</li>
         <li>Responses include appropriate <code>Content-Type</code> headers and 1-hour cache headers</li>
-        <li>No authentication required</li>
+        <li>No authentication required &mdash; unless the content is encrypted (see below)</li>
     </ul>
+
+    <h2>Encryption</h2>
+    <p>Pass a <code>passphrase</code> when creating content to encrypt its files at rest. Visitors then
+       have to enter that passphrase before anything is served.</p>
+    <pre><code># Upload an encrypted page
+curl -u admin:changeme \
+  -F "slug=private-page" \
+  -F "file=@index.html" \
+  -F "passphrase=correct horse battery staple" \
+  https://content.oglimmer.com/api/content</code></pre>
+
+    <h3 style="color: var(--text); font-size: 1.05em; margin-top: 28px;">How it is protected</h3>
+    <ul>
+        <li>The passphrase derives a key with <strong>Argon2id</strong> (RFC 9106: 64&nbsp;MiB, t=3, p=4, random per-content salt)</li>
+        <li>That key wraps a random per-content data key, which seals every file with <strong>XChaCha20-Poly1305</strong></li>
+        <li>Only the wrapped key is stored. The passphrase is never persisted and <strong>cannot be recovered</strong> &mdash; lose it and the content is gone</li>
+        <li>Metadata (slug, title, creator, file names) is <em>not</em> encrypted &mdash; only the file contents</li>
+    </ul>
+
+    <h3 style="color: var(--text); font-size: 1.05em; margin-top: 28px;">Serving encrypted content</h3>
+    <ul>
+        <li><code>GET /s/{slug}</code> answers <code>401 Unauthorized</code> with a passphrase form until the content is unlocked</li>
+        <li><code>POST /unlock/{slug}</code> with a <code>passphrase</code> form field (and optional <code>next</code> path) sets an <code>HttpOnly</code> cookie scoped to <code>/s/{slug}</code>, then redirects</li>
+        <li>The cookie carries the decryption key for 12 hours by default, so sub-resources load without asking again</li>
+        <li>Encrypted responses are sent <code>Cache-Control: private, no-store</code> and <code>X-Robots-Tag: noindex</code></li>
+        <li>Missing paths under locked content also answer <code>401</code>, so the file layout stays private</li>
+    </ul>
+
+    <h3 style="color: var(--text); font-size: 1.05em; margin-top: 28px;">Changing protection</h3>
+    <pre><code># Encrypt content that is already public
+curl -X PUT -u admin:changeme \
+  -F "passphrase=new secret" \
+  https://content.oglimmer.com/api/content/my-page
+
+# Replace the files of encrypted content
+curl -X PUT -u admin:changeme \
+  -F "file=@updated.html" \
+  -F "passphrase=new secret" \
+  https://content.oglimmer.com/api/content/my-page
+
+# Rotate the passphrase (revokes visitors who already unlocked it)
+curl -X PUT -u admin:changeme \
+  -F "passphrase=new secret" \
+  -F "newPassphrase=even better secret" \
+  https://content.oglimmer.com/api/content/my-page
+
+# Remove encryption
+curl -X PUT -u admin:changeme \
+  -F "passphrase=even better secret" \
+  -F "removeEncryption=true" \
+  https://content.oglimmer.com/api/content/my-page</code></pre>
 
     <h2>Slug Rules</h2>
     <ul>
@@ -211,6 +268,7 @@ https://content.oglimmer.com/s/{slug}/{path}</code></pre>
         <li>Max upload size: <strong>10 MB</strong></li>
         <li>Rate limit: <strong>10 requests/second</strong> per IP (returns <code>429 Too Many Requests</code> when exceeded)</li>
         <li>ZIP uploads: <code>__MACOSX</code> and hidden files are automatically filtered</li>
+        <li>Unlock attempts are rate limited like any other <code>/s/</code> or <code>/unlock/</code> request, and each attempt costs a deliberate 64&nbsp;MiB Argon2id derivation</li>
     </ul>
 </main>
 {{template "footer" .}}

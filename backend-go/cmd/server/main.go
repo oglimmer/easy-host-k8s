@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	_ "github.com/go-sql-driver/mysql"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/oglimmer/easy-host/internal/auth"
 	"github.com/oglimmer/easy-host/internal/config"
+	"github.com/oglimmer/easy-host/internal/crypto"
 	"github.com/oglimmer/easy-host/internal/handler"
 	mcpserver "github.com/oglimmer/easy-host/internal/mcp"
 	"github.com/oglimmer/easy-host/internal/middleware"
@@ -70,7 +72,6 @@ func main() {
 
 	tmplDir := findTemplateDir()
 	apiHandler := handler.NewAPIHandler(svc, cfg.MaxUploadSize)
-	servingHandler := handler.NewServingHandler(svc)
 
 	var oidcLogout handler.OIDCLogout
 	if oidcHandler != nil {
@@ -78,6 +79,15 @@ func main() {
 	}
 	webHandler := handler.NewWebHandler(svc, users, sessionStore, tmplDir, cfg.MaxUploadSize, cfg.OIDCEnabled(), oidcLogout, cfg.OIDCClientID, baseURL)
 	healthHandler := handler.NewHealthHandler(db)
+
+	// Unlock tokens let a visitor who has entered the passphrase for encrypted
+	// content keep browsing it; the webHandler renders the passphrase prompt.
+	unlocker, err := crypto.NewUnlocker(cfg.UnlockTokenSecret, cfg.UnlockTTL)
+	if err != nil {
+		log.Fatalf("unlock token init error: %v", err)
+	}
+	servingHandler := handler.NewServingHandler(svc, unlocker, webHandler, strings.HasPrefix(baseURL, "https://"))
+	log.Printf("passphrase-protected content ready (unlock TTL: %s)", cfg.UnlockTTL)
 
 	// MCP endpoint and its OAuth 2.1 authorization server (DCR + PKCE).
 	mcpOAuthSvc := service.NewMCPOAuthService(s, baseURL, cfg.MCPTokenSecret)
@@ -109,9 +119,11 @@ func main() {
 	r.Get("/privacy", webHandler.PrivacyPage)
 	r.Get("/terms", webHandler.TermsPage)
 
-	// Public serving
+	// Public serving. Encrypted content answers 401 with a passphrase prompt
+	// until the visitor unlocks it.
 	r.Get("/s/{slug}", servingHandler.ServeIndex)
 	r.Get("/s/{slug}/*", servingHandler.ServeFile)
+	r.Post("/unlock/{slug}", servingHandler.Unlock)
 
 	// MCP endpoint and its OAuth 2.1 authorization server. Grouped under CORS so
 	// MCP clients can discover and connect cross-origin; the /mcp handler

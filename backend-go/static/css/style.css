@@ -1064,6 +1064,63 @@ pre code {
 
 /* ============ Responsive ============ */
 
+/* ============ Encryption ============ */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 0.7em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+.badge-lock {
+    background: var(--accent-dim);
+    border: 1px solid rgba(226, 168, 75, 0.28);
+    color: var(--accent);
+    font-family: var(--font-body);
+    font-style: normal;
+}
+/* Grouped fields, e.g. the encryption block on the edit form */
+.field-group {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    padding: 20px 20px 4px;
+    margin-bottom: 22px;
+    background: var(--bg-warm);
+}
+.field-group > legend {
+    padding: 0 8px;
+    margin-left: -8px;
+    font-size: 0.78em;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+.field-group > .hint {
+    margin: 0 0 18px;
+}
+/* Lock glyph above the passphrase prompt */
+.unlock-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    border: 1px solid rgba(226, 168, 75, 0.28);
+    color: var(--accent);
+}
+
+
 @media (max-width: 768px) {
     .table th:nth-child(3), .table td:nth-child(3),
     .table th:nth-child(4), .table td:nth-child(4) { display: none; }

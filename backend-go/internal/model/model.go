@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/oglimmer/easy-host/internal/crypto"
+)
 
 type Content struct {
 	ID                     int64     `json:"id"`
@@ -12,7 +16,13 @@ type Content struct {
 	AllowExternalResources bool      `json:"allowExternalResources"`
 	CreatedAt              time.Time `json:"createdAt"`
 	UpdatedAt              time.Time `json:"updatedAt"`
+	// Encryption is the passphrase-protected wrapping of this entry's data key,
+	// or nil when the content is stored unencrypted.
+	Encryption *crypto.Envelope `json:"-"`
 }
+
+// IsEncrypted reports whether this entry's files are encrypted at rest.
+func (c *Content) IsEncrypted() bool { return c.Encryption != nil }
 
 type ContentFile struct {
 	ID                     int64  `json:"id"`
@@ -21,6 +31,10 @@ type ContentFile struct {
 	FileData               []byte `json:"-"`
 	ContentType            string `json:"contentType"`
 	AllowExternalResources bool   `json:"-"`
+	// Encrypted reports that this file belongs to a passphrase-protected content
+	// entry, so it is stored sealed. It stays true after the service layer has
+	// decrypted FileData for serving.
+	Encrypted bool `json:"-"`
 }
 
 type ContentResponse struct {
@@ -31,6 +45,7 @@ type ContentResponse struct {
 	Owner                  string    `json:"owner"`
 	Creator                string    `json:"creator"`
 	AllowExternalResources bool      `json:"allowExternalResources"`
+	Encrypted              bool      `json:"encrypted"`
 	CreatedAt              time.Time `json:"createdAt"`
 	UpdatedAt              time.Time `json:"updatedAt"`
 	Files                  []string  `json:"files"`
@@ -45,6 +60,7 @@ func (c *Content) ToResponse(files []string) ContentResponse {
 		Owner:                  c.Owner,
 		Creator:                c.Creator,
 		AllowExternalResources: c.AllowExternalResources,
+		Encrypted:              c.IsEncrypted(),
 		CreatedAt:              c.CreatedAt,
 		UpdatedAt:              c.UpdatedAt,
 		Files:                  files,

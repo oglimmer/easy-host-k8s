@@ -1,0 +1,28 @@
+{{define "title"}}Protected content{{end}}
+{{template "head" .}}
+<div class="login-page">
+    <div class="login-box">
+        <div class="unlock-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+        </div>
+        <h1>Protected</h1>
+        <p class="subtitle">This page is encrypted. Enter its passphrase to continue.</p>
+        {{if .Error}}<div class="flash flash-error">{{.Error}}</div>{{end}}
+        <form method="post" action="/unlock/{{.Slug}}">
+            <input type="hidden" name="next" value="{{.Next}}">
+            <div class="field">
+                <label for="passphrase">Passphrase</label>
+                <input type="password" id="passphrase" name="passphrase" required autofocus
+                       autocomplete="off" placeholder="Enter the passphrase">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Unlock</button>
+        </form>
+        <div class="login-footer">
+            <span class="text-secondary">/s/{{.Slug}}</span>
+        </div>
+    </div>
+</div>
+{{template "footer" .}}

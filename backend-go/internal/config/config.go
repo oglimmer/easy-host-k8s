@@ -1,8 +1,10 @@
 package config
 
 import (
+	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 type Config struct {
@@ -14,6 +16,12 @@ type Config struct {
 	AdminPassword    string
 	SessionSecret    string
 	MCPTokenSecret   string
+	// UnlockTokenSecret seals the cookies that carry a visitor's decryption key
+	// for passphrase-protected content.
+	UnlockTokenSecret string
+	// UnlockTTL is how long one passphrase entry keeps encrypted content
+	// viewable before the visitor is asked again.
+	UnlockTTL        time.Duration
 	MaxUploadSize    int64
 	OIDCIssuerURL    string
 	OIDCClientID     string
@@ -35,19 +43,21 @@ func Load() *Config {
 		}
 	}
 	return &Config{
-		Port:             envOr("PORT", "8080"),
-		DSN:              buildDSN(),
-		ActuatorUsername: envOr("ACTUATOR_USERNAME", "actuator"),
-		ActuatorPassword: envOr("ACTUATOR_PASSWORD", "changeme"),
-		AdminUsername:    envOr("APP_ADMIN_USERNAME", "admin"),
-		AdminPassword:    envOr("APP_ADMIN_PASSWORD", "changeme"),
-		SessionSecret:    envOr("SESSION_SECRET", "change-me-in-production-32bytes!"),
-		MCPTokenSecret:   envOr("MCP_TOKEN_SECRET", envOr("SESSION_SECRET", "change-me-in-production-32bytes!")),
-		MaxUploadSize:    10 << 20, // 10MB
-		OIDCIssuerURL:    os.Getenv("OIDC_ISSUER_URL"),
-		OIDCClientID:     os.Getenv("OIDC_CLIENT_ID"),
-		OIDCClientSecret: os.Getenv("OIDC_CLIENT_SECRET"),
-		OIDCAllowedUsers: allowedUsers,
+		Port:              envOr("PORT", "8080"),
+		DSN:               buildDSN(),
+		ActuatorUsername:  envOr("ACTUATOR_USERNAME", "actuator"),
+		ActuatorPassword:  envOr("ACTUATOR_PASSWORD", "changeme"),
+		AdminUsername:     envOr("APP_ADMIN_USERNAME", "admin"),
+		AdminPassword:     envOr("APP_ADMIN_PASSWORD", "changeme"),
+		SessionSecret:     envOr("SESSION_SECRET", "change-me-in-production-32bytes!"),
+		MCPTokenSecret:    envOr("MCP_TOKEN_SECRET", envOr("SESSION_SECRET", "change-me-in-production-32bytes!")),
+		UnlockTokenSecret: envOr("UNLOCK_TOKEN_SECRET", envOr("SESSION_SECRET", "change-me-in-production-32bytes!")),
+		UnlockTTL:         durationOr("UNLOCK_TTL", 12*time.Hour),
+		MaxUploadSize:     10 << 20, // 10MB
+		OIDCIssuerURL:     os.Getenv("OIDC_ISSUER_URL"),
+		OIDCClientID:      os.Getenv("OIDC_CLIENT_ID"),
+		OIDCClientSecret:  os.Getenv("OIDC_CLIENT_SECRET"),
+		OIDCAllowedUsers:  allowedUsers,
 	}
 }
 
@@ -92,6 +102,21 @@ func parseJDBCURL(jdbc string) string {
 		dbName = parts[1]
 	}
 	return user + ":" + pass + "@tcp(" + hostPort + ")/" + dbName + "?parseTime=true&charset=utf8mb4&multiStatements=true"
+}
+
+// durationOr reads a Go duration (e.g. "12h", "30m"), falling back on anything
+// unparseable so a typo cannot take the service down.
+func durationOr(key string, fallback time.Duration) time.Duration {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil || d <= 0 {
+		log.Printf("config: ignoring invalid %s=%q, using %s", key, v, fallback)
+		return fallback
+	}
+	return d
 }
 
 func envOr(key, fallback string) string {
